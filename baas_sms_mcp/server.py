@@ -80,7 +80,7 @@ async def send_sms(
         }
         
         headers = {
-            "Authorization": f"Bearer {BAAS_API_KEY}",
+            "x_api_key": f"{BAAS_API_KEY}",
             "Content-Type": "application/json"
         }
         
@@ -198,7 +198,7 @@ async def send_mms(
         }
         
         headers = {
-            "Authorization": f"Bearer {BAAS_API_KEY}",
+            "x_api_key": f"{BAAS_API_KEY}",
             "Content-Type": "application/json"
         }
         
@@ -255,7 +255,7 @@ async def get_message_status(group_id: int) -> Dict[str, Any]:
     """
     try:
         headers = {
-            "Authorization": f"Bearer {BAAS_API_KEY}",
+            "x_api_key": f"{BAAS_API_KEY}",
             "Content-Type": "application/json"
         }
         
@@ -359,7 +359,7 @@ async def get_send_history(
             message_type = "ALL"
         
         headers = {
-            "Authorization": f"Bearer {BAAS_API_KEY}",
+            "x_api_key": f"{BAAS_API_KEY}",
             "Content-Type": "application/json"
         }
         

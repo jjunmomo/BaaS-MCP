@@ -30,39 +30,116 @@ function findPython() {
         }
     }
     
-    throw new Error('Python 3.10+ 이상이 필요하지만 찾을 수 없습니다. Python 3.10 이상을 설치해주세요.');
+    throw new Error('Python 3.10+ required but not found. Please install Python 3.10 or higher.');
 }
 
 function installDependencies(pythonCmd) {
-    console.log('Python 의존성을 설치하는 중...');
-    
     const requirementsPath = path.join(__dirname, 'requirements.txt');
-    const installProcess = require('child_process').spawnSync(
-        pythonCmd, 
+    
+    // Try different installation methods for macOS
+    const installMethods = [
+        // Try with --user flag first
+        ['-m', 'pip', 'install', '-r', requirementsPath, '--user', '--quiet'],
+        // Try with --break-system-packages for externally-managed environments
+        ['-m', 'pip', 'install', '-r', requirementsPath, '--break-system-packages', '--quiet'],
+        // Try creating a virtual environment
+        ['-m', 'venv', path.join(__dirname, '.venv')]
+    ];
+    
+    // First, try direct pip install methods
+    for (let i = 0; i < 2; i++) {
+        const installProcess = require('child_process').spawnSync(
+            pythonCmd, 
+            installMethods[i], 
+            { 
+                stdio: 'pipe',
+                cwd: __dirname
+            }
+        );
+        
+        if (installProcess.status === 0) {
+            return; // Success
+        }
+    }
+    
+    // If direct methods fail, try virtual environment
+    const venvPath = path.join(__dirname, '.venv');
+    const fs = require('fs');
+    
+    // Create virtual environment if it doesn't exist
+    if (!fs.existsSync(venvPath)) {
+        const venvProcess = require('child_process').spawnSync(
+            pythonCmd, 
+            ['-m', 'venv', venvPath], 
+            { stdio: 'pipe', cwd: __dirname }
+        );
+        
+        if (venvProcess.status !== 0) {
+            throw new Error('Virtual environment creation failed');
+        }
+    }
+    
+    // Install dependencies in virtual environment
+    const venvPython = os.platform() === 'win32' 
+        ? path.join(venvPath, 'Scripts', 'python.exe')
+        : path.join(venvPath, 'bin', 'python');
+    
+    const venvInstallProcess = require('child_process').spawnSync(
+        venvPython, 
         ['-m', 'pip', 'install', '-r', requirementsPath, '--quiet'], 
         { 
-            stdio: 'inherit',
+            stdio: 'pipe',
             cwd: __dirname
         }
     );
     
-    if (installProcess.status !== 0) {
-        console.error('Python 의존성 설치에 실패했습니다.');
-        console.error('다음 명령어를 실행해주세요: pip install -r requirements.txt');
-        process.exit(1);
+    if (venvInstallProcess.status !== 0) {
+        throw new Error('Virtual environment dependency installation failed');
     }
 }
 
 function checkDependencies(pythonCmd) {
-    // Check if required packages are installed
-    const checkProcess = require('child_process').spawnSync(
+    // First check system Python
+    let checkProcess = require('child_process').spawnSync(
         pythonCmd,
-        ['-c', 'import mcp, httpx; print("Dependencies OK")'],
+        ['-c', 'import mcp, httpx'],
         { stdio: 'pipe', encoding: 'utf8' }
     );
     
-    if (checkProcess.status !== 0) {
+    if (checkProcess.status === 0) {
+        return pythonCmd; // System Python has dependencies
+    }
+    
+    // Check virtual environment
+    const venvPath = path.join(__dirname, '.venv');
+    const venvPython = os.platform() === 'win32' 
+        ? path.join(venvPath, 'Scripts', 'python.exe')
+        : path.join(venvPath, 'bin', 'python');
+    
+    const fs = require('fs');
+    if (fs.existsSync(venvPython)) {
+        checkProcess = require('child_process').spawnSync(
+            venvPython,
+            ['-c', 'import mcp, httpx'],
+            { stdio: 'pipe', encoding: 'utf8' }
+        );
+        
+        if (checkProcess.status === 0) {
+            return venvPython; // Virtual environment has dependencies
+        }
+    }
+    
+    // Install dependencies if not found
+    try {
         installDependencies(pythonCmd);
+        
+        // Return appropriate Python executable
+        if (fs.existsSync(venvPython)) {
+            return venvPython;
+        }
+        return pythonCmd;
+    } catch (error) {
+        throw new Error(`Dependency installation failed: ${error.message}`);
     }
 }
 
@@ -70,28 +147,24 @@ function startMCPServer() {
     try {
         // Find Python executable
         const pythonCmd = findPython();
-        console.log(`사용할 Python: ${pythonCmd}`);
         
-        // Check and install dependencies if needed
-        checkDependencies(pythonCmd);
+        // Check and install dependencies if needed, get correct Python path
+        const actualPythonCmd = checkDependencies(pythonCmd);
         
         // Path to the Python MCP server
         const serverPath = path.join(__dirname, 'baas_sms_mcp', 'server.py');
         
-        // Validate environment variables
+        // Validate environment variables (silently)
         const requiredEnvVars = ['BAAS_API_KEY', 'PROJECT_ID'];
         const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
         
+        // Only log to stderr for debugging, not stdout (which interferes with MCP protocol)
         if (missingVars.length > 0) {
-            console.warn(`경고: 누락된 환경변수: ${missingVars.join(', ')}`);
-            console.warn('이 변수들이 없으면 서버가 정상적으로 작동하지 않을 수 있습니다.');
-            console.warn('환경변수를 설정하거나 Claude Desktop 설정에서 추가해주세요.');
-            console.warn('참고: BAAS_API_BASE_URL은 https://api.aiapp.link로 고정되었습니다');
+            process.stderr.write(`Warning: Missing environment variables: ${missingVars.join(', ')}\n`);
         }
         
-        // Start the Python MCP server
-        console.log('BaaS SMS/MMS MCP 서버를 시작합니다...');
-        const serverProcess = spawn(pythonCmd, [serverPath], {
+        // Start the Python MCP server with stdio for MCP protocol
+        const serverProcess = spawn(actualPythonCmd, [serverPath], {
             stdio: 'inherit',
             cwd: __dirname,
             env: process.env
@@ -99,36 +172,34 @@ function startMCPServer() {
         
         // Handle process events
         serverProcess.on('error', (error) => {
-            console.error('MCP 서버 시작에 실패했습니다:', error.message);
+            process.stderr.write(`MCP server startup failed: ${error.message}\n`);
             process.exit(1);
         });
         
         serverProcess.on('exit', (code, signal) => {
             if (signal) {
-                console.log(`MCP 서버가 시그널에 의해 종료되었습니다: ${signal}`);
+                process.stderr.write(`MCP server terminated by signal: ${signal}\n`);
             } else if (code !== 0) {
-                console.error(`MCP 서버가 코드 ${code}로 종료되었습니다`);
+                process.stderr.write(`MCP server exited with code: ${code}\n`);
                 process.exit(code);
             }
         });
         
         // Handle termination signals
         process.on('SIGINT', () => {
-            console.log('\nMCP 서버를 종료하는 중...');
             serverProcess.kill('SIGINT');
         });
         
         process.on('SIGTERM', () => {
-            console.log('\nMCP 서버를 종료하는 중...');
             serverProcess.kill('SIGTERM');
         });
         
     } catch (error) {
-        console.error('MCP 서버 시작 중 오류 발생:', error.message);
-        console.error('\n문제 해결 방법:');
-        console.error('1. Python 3.10+ 이상이 설치되어 있는지 확인');
-        console.error('2. pip이 사용 가능한지 확인');
-        console.error('3. 필수 환경변수 설정: BAAS_API_KEY, PROJECT_ID');
+        process.stderr.write(`MCP server startup error: ${error.message}\n`);
+        process.stderr.write('Troubleshooting steps:\n');
+        process.stderr.write('1. Ensure Python 3.10+ is installed\n');
+        process.stderr.write('2. Check pip availability\n');
+        process.stderr.write('3. Set required environment variables: BAAS_API_KEY, PROJECT_ID\n');
         process.exit(1);
     }
 }
