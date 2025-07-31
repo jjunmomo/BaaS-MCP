@@ -2,7 +2,7 @@
   "name": "baas-sms-mcp",
   "version": "1.0.0",
   "description": "A Model Context Protocol server for SMS and MMS messaging services",
-  "main": "index.js",clear
+  "main": "index.js",
   "bin": {
     "baas-sms-mcp": "./index.js"
   },
@@ -28,12 +28,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/your-org/baas-sms-mcp.git"
+    "url": "https://github.com/jjunmomo/BaaS-MCP.git"
   },
   "bugs": {
-    "url": "https://github.com/your-org/baas-sms-mcp/issues"
+    "url": "https://github.com/jjunmomo/BaaS-MCP/issues"
   },
-  "homepage": "https://github.com/your-org/baas-sms-mcp#readme",
+  "homepage": "https://github.com/jjunmomo/BaaS-MCP/blob/master/README.md",
   "engines": {
     "node": ">=16.0.0"
   },
