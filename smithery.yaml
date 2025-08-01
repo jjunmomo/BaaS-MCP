@@ -1,0 +1,24 @@
+# Smithery configuration file: https://smithery.ai/docs/build/project-config
+
+startCommand:
+  type: stdio
+  commandFunction:
+    # A JS function that produces the CLI command based on the given config to start the MCP on stdio.
+    |-
+    (config) => ({ command: 'node', args: ['index.js'], env: { BAAS_API_KEY: config.baasApiKey, PROJECT_ID: config.projectId } })
+  configSchema:
+    # JSON Schema defining the configuration options for the MCP.
+    type: object
+    required:
+      - baasApiKey
+      - projectId
+    properties:
+      baasApiKey:
+        type: string
+        description: BaaS API key
+      projectId:
+        type: string
+        description: Project UUID
+  exampleConfig:
+    baasApiKey: your_api_key_here
+    projectId: 123e4567-e89b-12d3-a456-426614174000
