@@ -5,18 +5,17 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A Model Context Protocol (MCP) server for SMS and MMS messaging services. This server enables Claude to help developers easily implement messaging features in web and mobile applications by providing direct integration with BaaS API services.
+A Model Context Protocol (MCP) server that enables Claude to generate SMS/MMS implementation code for your projects. When you ask Claude to implement messaging features, it will generate code that directly calls the BaaS API at `https://api.aiapp.link`, eliminating the need for you to write API integration code manually.
 
 ## Features
 
-- **Developer-Friendly**: Claude can automatically generate messaging code for your applications
-- **SMS Sending**: Send SMS messages to single or multiple recipients
-- **MMS Sending**: Send MMS messages with image attachments
-- **Message Status**: Check sending status and delivery confirmation
-- **Send History**: Retrieve message sending history for projects
-- **Multi-Framework Support**: Works with React, Vue, Node.js, Python, and more
+- **Code Generation**: Claude generates ready-to-use SMS/MMS code for your projects
+- **Direct API Integration**: Generated code calls `https://api.aiapp.link` directly
+- **Multi-Framework Support**: Generates code for React, Vue, Node.js, Python, Django, and more
+- **Complete Implementation**: Includes error handling, validation, and status checking
+- **Copy-Paste Ready**: Generated code can be directly copied to your project
 - **Project Isolation**: Multi-tenant support with project-based access control
-- **Error Handling**: Comprehensive error handling with detailed error codes
+- **Real-time Status**: Code for checking delivery status and message history
 
 ## Use Cases
 
@@ -117,38 +116,112 @@ from baas_sms_mcp import main
 main()
 ```
 
+## How It Works
+
+When you ask Claude to implement SMS/MMS features in your project:
+
+1. **You ask:** "Implement SMS verification in my React app"
+2. **Claude generates:** Complete code that calls `https://api.aiapp.link` directly
+3. **You copy:** The generated code into your project
+4. **It works:** Your app sends SMS through BaaS API automatically
+
 ## Developer Examples
 
-### Example 1: User Registration with SMS Verification
+### Example 1: React SMS Verification
 
 **Prompt to Claude:**
-> "Create a user registration API that sends SMS verification codes"
+> "Create a React component with SMS verification for user registration"
 
-**Claude will generate:**
+**Claude will generate code like this (copy-paste ready):**
 
 ```javascript
-// Node.js/Express example
-app.post('/register', async (req, res) => {
-  const { phoneNumber, username } = req.body;
+// Backend API endpoint (Express.js)
+app.post('/api/send-sms', async (req, res) => {
+  const { phoneNumber, message, memberCode } = req.body;
   
-  // Generate verification code
-  const verificationCode = Math.floor(100000 + Math.random() * 900000);
-  
-  // Send SMS using BaaS MCP
-  const smsResult = await sendSMS({
-    recipients: [{ phone_number: phoneNumber, member_code: username }],
-    message: `Your verification code is: ${verificationCode}`,
-    callback_number: "02-1234-5678"
-  });
-  
-  if (smsResult.success) {
-    // Store verification code in database
-    await saveVerificationCode(phoneNumber, verificationCode);
-    res.json({ success: true, message: "Verification code sent" });
-  } else {
-    res.status(500).json({ error: "Failed to send SMS" });
+  try {
+    // Direct call to BaaS API
+    const response = await fetch('https://api.aiapp.link/message/sms', {
+      method: 'POST',
+      headers: {
+        'x_api_key': process.env.BAAS_API_KEY,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        recipients: [{ 
+          phone_number: phoneNumber, 
+          member_code: memberCode || `member_${Date.now()}` 
+        }],
+        message: message,
+        callback_number: "02-1234-5678", // Your business number
+        project_id: process.env.PROJECT_ID,
+        channel_id: 1 // SMS channel
+      })
+    });
+    
+    const result = await response.json();
+    res.json(result);
+    
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 });
+
+// Frontend React component
+import React, { useState } from 'react';
+
+function SMSVerification() {
+  const [phone, setPhone] = useState('');
+  const [code, setCode] = useState('');
+  const [step, setStep] = useState('phone'); // 'phone' or 'verify'
+
+  const sendCode = async () => {
+    const verificationCode = Math.floor(100000 + Math.random() * 900000);
+    
+    const response = await fetch('/api/send-sms', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        phoneNumber: phone,
+        message: `[Your App] 인증번호는 ${verificationCode}입니다. 5분 내에 입력해주세요.`,
+        memberCode: 'user_' + Date.now()
+      })
+    });
+    
+    const result = await response.json();
+    if (result.success) {
+      setStep('verify');
+      // Store code for verification (use secure storage in production)
+      sessionStorage.setItem('verificationCode', verificationCode);
+    }
+  };
+
+  return (
+    <div>
+      {step === 'phone' ? (
+        <div>
+          <input 
+            type="tel" 
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder="010-1234-5678"
+          />
+          <button onClick={sendCode}>인증번호 발송</button>
+        </div>
+      ) : (
+        <div>
+          <input 
+            type="text" 
+            value={code}
+            onChange={(e) => setCode(e.target.value)}
+            placeholder="인증번호 입력"
+          />
+          <button onClick={() => {/* verify logic */}}>인증 확인</button>
+        </div>
+      )}
+    </div>
+  );
+}
 ```
 
 ### Example 2: Order Confirmation MMS

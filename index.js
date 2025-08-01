@@ -155,7 +155,7 @@ function startMCPServer() {
         const serverPath = path.join(__dirname, 'baas_sms_mcp', 'server.py');
         
         // Validate environment variables (silently)
-        const requiredEnvVars = ['BAAS_API_KEY', 'PROJECT_ID'];
+        const requiredEnvVars = ['BAAS_API_KEY'];
         const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
         
         // Only log to stderr for debugging, not stdout (which interferes with MCP protocol)
@@ -199,7 +199,7 @@ function startMCPServer() {
         process.stderr.write('Troubleshooting steps:\n');
         process.stderr.write('1. Ensure Python 3.10+ is installed\n');
         process.stderr.write('2. Check pip availability\n');
-        process.stderr.write('3. Set required environment variables: BAAS_API_KEY, PROJECT_ID\n');
+        process.stderr.write('3. Set required environment variables: BAAS_API_KEY\n');
         process.exit(1);
     }
 }

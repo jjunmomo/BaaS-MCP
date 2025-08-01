@@ -18,7 +18,6 @@ mcp = FastMCP("baas-mcp")
 # Configuration
 API_BASE_URL = "https://api.aiapp.link"  # Fixed BaaS API endpoint
 BAAS_API_KEY = os.getenv("BAAS_API_KEY", "")
-PROJECT_ID = os.getenv("PROJECT_ID", "")
 
 # HTTP client setup
 client = httpx.AsyncClient(timeout=30.0)
@@ -28,7 +27,7 @@ async def send_sms(
     recipients: List[Dict[str, str]],
     message: str,
     callback_number: str,
-    project_id: Optional[str] = None
+    project_id: str
 ) -> Dict[str, Any]:
     """
     Send SMS message to one or multiple recipients for user authentication, notifications, or marketing campaigns
@@ -39,16 +38,14 @@ async def send_sms(
         recipients: List of recipients with phone_number (Korean format: 010-1234-5678) and member_code (unique identifier)
         message: SMS message content (max 2000 characters, supports Korean text)
         callback_number: Sender callback number (your business number)
-        project_id: Project UUID (optional, uses env var if not provided)
+        project_id: Project UUID (required)
     
     Returns:
         Dictionary with success status, group_id for tracking, and sending statistics
         Use group_id with get_message_status() to check delivery
     """
     try:
-        # Use provided project_id or fallback to environment variable
-        current_project_id = project_id or PROJECT_ID
-        if not current_project_id:
+        if not project_id:
             return {
                 "success": False,
                 "error": "프로젝트 ID가 필요합니다",
@@ -75,12 +72,12 @@ async def send_sms(
             "recipients": recipients,
             "message": message,
             "callback_number": callback_number,
-            "project_id": current_project_id,
+            "project_id": project_id,
             "channel_id": 1  # SMS channel
         }
         
         headers = {
-            "x_api_key": f"{BAAS_API_KEY}",
+            "X-API-KEY": f"{BAAS_API_KEY}",
             "Content-Type": "application/json"
         }
         
@@ -127,8 +124,8 @@ async def send_mms(
     message: str,
     subject: str,
     callback_number: str,
-    image_urls: Optional[List[str]] = None,
-    project_id: Optional[str] = None
+    project_id: str,
+    image_urls: Optional[List[str]] = None
 ) -> Dict[str, Any]:
     """
     Send MMS message with images to one or multiple recipients for rich media marketing and notifications
@@ -140,17 +137,15 @@ async def send_mms(
         message: MMS message content (max 2000 characters, supports Korean text and emojis)
         subject: MMS subject line (max 40 characters, appears as message title)
         callback_number: Sender callback number (your business number)
+        project_id: Project UUID (required)
         image_urls: List of publicly accessible image URLs to attach (max 5 images, JPG/PNG format)
-        project_id: Project UUID (optional, uses env var if not provided)
         
     Returns:
         Dictionary with success status, group_id for tracking, and sending statistics
         Use group_id with get_message_status() to check delivery and view analytics
     """
     try:
-        # Use provided project_id or fallback to environment variable
-        current_project_id = project_id or PROJECT_ID
-        if not current_project_id:
+        if not project_id:
             return {
                 "success": False,
                 "error": "프로젝트 ID가 필요합니다",
@@ -192,13 +187,13 @@ async def send_mms(
             "message": message,
             "subject": subject,
             "callback_number": callback_number,
-            "project_id": current_project_id,
+            "project_id": project_id,
             "channel_id": 3,  # MMS channel
             "img_url_list": image_urls or []
         }
         
         headers = {
-            "x_api_key": f"{BAAS_API_KEY}",
+            "X-API-KEY": f"{BAAS_API_KEY}",
             "Content-Type": "application/json"
         }
         
@@ -255,7 +250,7 @@ async def get_message_status(group_id: int) -> Dict[str, Any]:
     """
     try:
         headers = {
-            "x_api_key": f"{BAAS_API_KEY}",
+            "X-API-KEY": f"{BAAS_API_KEY}",
             "Content-Type": "application/json"
         }
         
@@ -323,7 +318,7 @@ async def get_message_status(group_id: int) -> Dict[str, Any]:
 
 @mcp.tool()
 async def get_send_history(
-    project_id: Optional[str] = None,
+    project_id: str,
     offset: int = 0,
     limit: int = 20,
     message_type: str = "ALL"
@@ -332,7 +327,7 @@ async def get_send_history(
     Get message sending history for a project
     
     Args:
-        project_id: Project UUID (optional, uses env var if not provided)
+        project_id: Project UUID (required)
         offset: Number of records to skip (default: 0)
         limit: Maximum number of records to return (default: 20, max: 100)
         message_type: Filter by message type ("SMS", "MMS", "ALL")
@@ -341,9 +336,7 @@ async def get_send_history(
         Dictionary with sending history data
     """
     try:
-        # Use provided project_id or fallback to environment variable
-        current_project_id = project_id or PROJECT_ID
-        if not current_project_id:
+        if not project_id:
             return {
                 "success": False,
                 "error": "프로젝트 ID가 필요합니다",
@@ -359,7 +352,7 @@ async def get_send_history(
             message_type = "ALL"
         
         headers = {
-            "x_api_key": f"{BAAS_API_KEY}",
+            "X-API-KEY": f"{BAAS_API_KEY}",
             "Content-Type": "application/json"
         }
         
@@ -374,7 +367,7 @@ async def get_send_history(
         return {
             "success": True,
             "data": {
-                "project_id": current_project_id,
+                "project_id": project_id,
                 "total_count": 0,
                 "offset": offset,
                 "limit": limit,
@@ -399,7 +392,7 @@ def main():
     """BaaS SMS/MCP 서버의 메인 진입점"""
     print("BaaS SMS/MMS MCP 서버를 시작합니다...")
     print(f"API 기본 URL: {API_BASE_URL}")
-    print(f"프로젝트 ID: {PROJECT_ID}")
+    print(f"API 키: {'설정됨' if BAAS_API_KEY else '설정되지 않음'}")
     
     try:
         mcp.run(transport="stdio")
