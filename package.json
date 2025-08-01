@@ -46,6 +46,7 @@
     "index.js",
     "requirements.txt",
     "baas_sms_mcp/",
+    "llms.txt",
     "README.md",
     "README.ko.md",
     "LICENSE"
