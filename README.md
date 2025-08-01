@@ -1,5 +1,6 @@
 # BaaS SMS/MCP Server
 
+[![smithery badge](https://smithery.ai/badge/@jjunmomo/baas-mcp)](https://smithery.ai/server/@jjunmomo/baas-mcp)
 [![npm version](https://badge.fury.io/js/baas-sms-mcp.svg)](https://badge.fury.io/js/baas-sms-mcp)
 [![PyPI version](https://badge.fury.io/py/baas-sms-mcp.svg)](https://badge.fury.io/py/baas-sms-mcp)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
@@ -26,6 +27,14 @@ A Model Context Protocol (MCP) server that enables Claude to generate SMS/MMS im
 - **Customer Support**: Automated support messages and updates
 
 ## Installation
+
+### Installing via Smithery
+
+To install BaaS SMS/MMS Messaging Server for Claude Desktop automatically via [Smithery](https://smithery.ai/server/@jjunmomo/baas-mcp):
+
+```bash
+npx -y @smithery/cli install @jjunmomo/baas-mcp --client claude
+```
 
 ### Using npm (Recommended)
 
