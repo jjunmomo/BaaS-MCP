@@ -1,6 +1,8 @@
 # BaaS SMS/MMS MCP Server
 
 > Direct API integration for SMS/MMS messaging services without MCP dependency
+> Updated API endpoints: /api/message/sms and /api/message/mms
+> Simplified authentication: X-API-KEY header only (no project_id required)
 
 ## Project Overview
 
@@ -8,9 +10,11 @@ This MCP server provides code generation tools for BaaS (Backend-as-a-Service) S
 
 ## Core Purpose
 
-- **Primary**: Generate direct API calling code for https://api.aiapp.link
+- **Primary**: Generate direct API calling code for https://api.aiapp.link/api/message/
 - **Secondary**: Provide deployment guides and project-specific helpers
 - **Optimization**: CDN-based templates for 90%+ token reduction
+- **Authentication**: X-API-KEY header only (PROJECT_ID parameter removed)
+- **Auto-injection**: MCP server environment BAAS_API_KEY automatically injected into generated code
 
 ## Supported Languages & Frameworks
 
@@ -48,12 +52,13 @@ Generates complete code for direct BaaS API integration.
 - `include_examples`: boolean (default: true)
 
 **Output**: Complete code with examples, configuration, and usage instructions
+**Auto-injection**: If MCP server has BAAS_API_KEY set, it's automatically injected into code
 
 ### `get_code_template_url(language, framework, deployment_platform)`
 Returns CDN URLs for templates (token-optimized alternative).
 
 ### `create_message_service_template(project_config, language, features)`
-Creates project-specific customized templates.
+Creates project-specific customized templates with auto-injected API key.
 
 ### `get_integration_guide(platform, deployment_type)`
 Provides deployment guides for specific platforms.
@@ -105,9 +110,10 @@ await sendPromotionalMMS(phoneList, title, content, imageUrls);
 ## Environment Configuration
 
 All generated code expects these environment variables:
-- `BAAS_API_KEY`: Your BaaS API key
-- `BAAS_PROJECT_ID`: Your project UUID
+- `BAAS_API_KEY`: Your BaaS API key (automatically injected if set in MCP server)
 - `BAAS_BASE_URL`: API endpoint (default: https://api.aiapp.link)
+
+**Breaking Change**: PROJECT_ID is no longer required - removed from API calls
 
 ## Deployment Support
 
@@ -132,23 +138,23 @@ All generated code expects these environment variables:
 ```
 cdn.mbaas.kr/templates/sms-mms/
 ├── javascript/
-│   ├── vanilla.md
+│   ├── vanilla.md        # Updated: no project_id, /api/message/ endpoints
 │   ├── react.md
 │   ├── vue.md
 │   └── nextjs.md
 ├── python/
-│   ├── vanilla.md
+│   ├── vanilla.md        # Updated: no project_id parameter
 │   ├── django.md
 │   └── fastapi.md
 ├── php/
-│   ├── vanilla.md
+│   ├── vanilla.md        # Updated: simplified constructor
 │   └── laravel.md
 ├── deployment/
-│   ├── vercel-production.md
+│   ├── vercel-production.md    # Updated: only BAAS_API_KEY needed
 │   ├── netlify-production.md
 │   └── docker-production.md
 └── helpers/
-    ├── javascript-project.md
+    ├── javascript-project.md   # Updated: auto API key injection
     └── python-project.md
 ```
 
@@ -156,11 +162,11 @@ cdn.mbaas.kr/templates/sms-mms/
 
 ### Basic Request
 "Generate JavaScript code for SMS sending"
-→ Returns: Complete BaaSMessageService class with examples
+→ Returns: Complete BaaSMessageService class with examples (API key auto-injected if available)
 
 ### Framework-Specific Request  
 "Create React component for SMS verification"
-→ Returns: React hooks, components, and integration guide
+→ Returns: React hooks, components, and integration guide (no project_id needed)
 
 ### Deployment Request
 "How do I deploy this on Vercel?"
@@ -168,7 +174,7 @@ cdn.mbaas.kr/templates/sms-mms/
 
 ### Project-Specific Request
 "Create SMS service for my e-commerce project"
-→ Returns: Customized code with order confirmation, delivery updates, etc.
+→ Returns: Customized code with order confirmation, delivery updates, etc. (API key pre-configured)
 
 ## Error Handling
 
@@ -206,3 +212,20 @@ All generated code includes:
 - Code organization principles
 
 This MCP server is designed to provide developers with production-ready SMS/MMS integration code while minimizing token usage through intelligent CDN-based template management.
+
+## Recent Updates (v1.0.17)
+
+**Breaking Changes**:
+- **Removed PROJECT_ID**: No longer required in API calls or environment variables
+- **Updated API endpoints**: Now uses /api/message/sms and /api/message/mms
+- **Simplified authentication**: Only X-API-KEY header needed
+
+**New Features**:
+- **Auto API Key Injection**: If BAAS_API_KEY is set in MCP server environment, it's automatically injected into generated code
+- **Enhanced CDN Templates**: All templates updated for new API structure
+- **Streamlined Configuration**: Simpler setup with fewer required parameters
+
+**Migration Guide**:
+- Remove BAAS_PROJECT_ID from environment variables
+- Update any existing code to use new /api/message/ endpoints
+- Constructor signatures changed: `new BaaSMessageService(apiKey)` (no projectId parameter)
