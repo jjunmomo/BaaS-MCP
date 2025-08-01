@@ -3,8 +3,7 @@
 BaaS SMS/MMS MCP Server
 
 Model Context Protocol server for SMS and MMS messaging services.
-This server provides tools for sending SMS/MMS messages, checking message status,
-and retrieving sending history through BaaS API integration.
+This server provides tools for generating code that directly calls BaaS API.
 """
 
 import os
@@ -40,7 +39,7 @@ async def get_code_template_url(
     
     Returns:
         CDN URL to markdown file with complete code examples and integration guide
-        Templates include direct API calls to https://api.aiapp.link
+        Templates include direct API calls to https://api.aiapp.link with /api/message/ endpoints
     """
     try:
         language = language.lower()
@@ -66,14 +65,6 @@ async def get_code_template_url(
         
         # Supported combinations
         supported_languages = ["javascript", "python", "php", "java", "go", "csharp"]
-        supported_frameworks = {
-            "javascript": ["react", "vue", "nextjs", "express", "nodejs"],
-            "python": ["django", "fastapi", "flask", "python"],
-            "php": ["laravel", "symfony", "php"],
-            "java": ["spring", "springboot"],
-            "go": ["gin", "echo", "fiber"],
-            "csharp": ["aspnet", "dotnet"]
-        }
         
         if language not in supported_languages:
             return {
@@ -90,15 +81,16 @@ async def get_code_template_url(
             "deployment_platform": platform,
             "template_url": template_url,
             "integration_url": integration_url,
-            "api_endpoint": "https://api.aiapp.link",
+            "api_endpoint": "https://api.aiapp.link/api/message/",
             "cdn_info": {
                 "cache_duration": "24시간",
                 "last_updated": "자동 업데이트",
                 "version": "latest"
             },
             "configuration": {
-                "required_env_vars": ["BAAS_API_KEY", "BAAS_PROJECT_ID"],
-                "installation_guide": f"{base_url}/setup/{language}.md"
+                "required_env_vars": ["BAAS_API_KEY"],
+                "installation_guide": f"{base_url}/setup/{language}.md",
+                "api_key_injected": bool(BAAS_API_KEY)
             },
             "message": f"{language} 템플릿 URL을 제공합니다. 토큰 최적화를 위해 CDN에서 직접 다운로드하세요."
         }
@@ -130,14 +122,15 @@ async def generate_direct_api_code(
         
     Returns:
         Dictionary with code fetched from CDN, filename, and integration instructions
-        Code directly calls https://api.aiapp.link with proper authentication
+        Code directly calls https://api.aiapp.link/api/message/ with X-API-KEY header authentication
+        If MCP server has BAAS_API_KEY set, it will be automatically injected into code
     """
     try:
         language = language.lower()
         framework = framework.lower() if framework else None
         
         # CDN base URL for templates
-        base_url = "https://cdn.baas-templates.com/sms-mms"
+        base_url = "https://cdn.mbaas.kr/templates/sms-mms"
         
         # Construct template path
         template_path = language
@@ -165,35 +158,27 @@ async def generate_direct_api_code(
                     code = template_content
                     
             else:
-                # Fallback to local generation if CDN is unavailable
-                if language == "javascript" or language == "js":
-                    code = generate_javascript_code(framework, include_examples)
-                elif language == "python" or language == "py":
-                    code = generate_python_code(framework, include_examples)
-                elif language == "php":
-                    code = generate_php_code(framework, include_examples)
-                else:
-                    return {
-                        "success": False,
-                        "error": f"CDN에서 템플릿을 가져올 수 없고, 언어 '{language}'는 로컬 생성을 지원하지 않습니다",
-                        "supported_languages": ["javascript", "python", "php"],
-                        "error_code": "TEMPLATE_UNAVAILABLE"
-                    }
-                    
-        except Exception as cdn_error:
-            # Fallback to local generation
-            if language == "javascript" or language == "js":
-                code = generate_javascript_code(framework, include_examples)
-            elif language == "python" or language == "py":
-                code = generate_python_code(framework, include_examples)
-            elif language == "php":
-                code = generate_php_code(framework, include_examples)
-            else:
                 return {
                     "success": False,
-                    "error": f"CDN 오류 및 로컬 생성 불가: {str(cdn_error)}",
-                    "error_code": "GENERATION_FAILED"
+                    "error": f"CDN에서 템플릿을 가져올 수 없습니다 (HTTP {response.status_code})",
+                    "cdn_url": template_url,
+                    "error_code": "CDN_UNAVAILABLE"
                 }
+                    
+        except Exception as cdn_error:
+            return {
+                "success": False,
+                "error": f"CDN 연결 오류: {str(cdn_error)}",
+                "cdn_url": template_url,
+                "error_code": "CDN_CONNECTION_ERROR"
+            }
+        
+        # Apply environment variable injection if API key is available
+        if BAAS_API_KEY:
+            code = code.replace('your-api-key', BAAS_API_KEY)
+            code = code.replace('process.env.BAAS_API_KEY', f"'{BAAS_API_KEY}'")
+            code = code.replace('os.getenv(\'BAAS_API_KEY\')', f"'{BAAS_API_KEY}'")
+            code = code.replace('$_ENV[\'BAAS_API_KEY\']', f"'{BAAS_API_KEY}'")
         
         # File naming
         extensions = {
@@ -210,19 +195,22 @@ async def generate_direct_api_code(
         # Configuration instructions
         config_instructions = {
             "javascript": {
-                "env_vars": ["BAAS_API_KEY", "BAAS_PROJECT_ID"],
+                "env_vars": ["BAAS_API_KEY"],
                 "install": "npm install (dependencies included in template)",
-                "usage": "Import and instantiate BaaSMessageService class"
+                "usage": "Import and instantiate BaaSMessageService class",
+                "api_key_injected": bool(BAAS_API_KEY)
             },
             "python": {
-                "env_vars": ["BAAS_API_KEY", "BAAS_PROJECT_ID"],
+                "env_vars": ["BAAS_API_KEY"],
                 "install": "pip install requests",
-                "usage": "Import and instantiate BaaSMessageService class"
+                "usage": "Import and instantiate BaaSMessageService class",
+                "api_key_injected": bool(BAAS_API_KEY)
             },
             "php": {
-                "env_vars": ["BAAS_API_KEY", "BAAS_PROJECT_ID"],
+                "env_vars": ["BAAS_API_KEY"],
                 "install": "cURL extension required (usually included)",
-                "usage": "Include file and instantiate BaaSMessageService class"
+                "usage": "Include file and instantiate BaaSMessageService class",
+                "api_key_injected": bool(BAAS_API_KEY)
             }
         }
         
@@ -232,12 +220,12 @@ async def generate_direct_api_code(
             "framework": framework,
             "code": code,
             "filename": filename,
-            "description": f"{language.title()} BaaS SMS service for direct API calls",
-            "source": "CDN template" if 'template_content' in locals() else "Local generation",
+            "description": f"{language.title()} BaaS SMS service for direct /api/message/ API calls",
+            "source": "CDN template",
             "template_url": template_url,
             "configuration": config_instructions.get(language, {}),
-            "api_endpoint": "https://api.aiapp.link",
-            "message": f"{language.title()} 코드가 성공적으로 생성되었습니다 (소스: {'CDN' if 'template_content' in locals() else '로컬'})"
+            "api_endpoint": "https://api.aiapp.link/api/message/",
+            "message": f"{language.title()} 코드가 성공적으로 생성되었습니다 (CDN 소스, API Key {'주입됨' if BAAS_API_KEY else '미설정'})"
         }
         
     except Exception as e:
@@ -260,19 +248,19 @@ async def create_message_service_template(
     Token-optimized: Fetches base template from CDN then applies project customizations
     
     Args:
-        project_config: Project configuration {project_id, default_callback, company_name, etc.}
+        project_config: Project configuration {default_callback, company_name, etc.}
         language: Target programming language
         features: List of features to include ["sms", "mms", "status_check", "history", "validation"]
         
     Returns:
         Complete service template with project-specific defaults and configuration
+        Automatically injects BAAS_API_KEY from MCP server environment if available
     """
     try:
         if features is None:
             features = ["sms", "mms", "status_check"]
         
         # Extract project configuration
-        project_id = project_config.get("project_id", "your-project-id")
         default_callback = project_config.get("default_callback", "02-1234-5678")
         company_name = project_config.get("company_name", "Your Company")
         
@@ -286,13 +274,16 @@ async def create_message_service_template(
         code = base_result["code"]
         
         # Replace placeholders with actual project values
-        code = code.replace("your-project-id", project_id)
         code = code.replace("02-1234-5678", default_callback)
         code = code.replace("Your Company", company_name)
         
+        # Apply environment variable injection if API key is available
+        if BAAS_API_KEY:
+            code = code.replace('your-api-key', BAAS_API_KEY)
+        
         # Fetch project-specific helpers from CDN
         try:
-            helpers_url = f"https://cdn.baas-templates.com/sms-mms/helpers/{language}-project.md"
+            helpers_url = f"https://cdn.mbaas.kr/templates/sms-mms/helpers/{language}-project.md"
             response = await client.get(helpers_url)
             
             if response.status_code == 200:
@@ -300,8 +291,11 @@ async def create_message_service_template(
                 
                 # Replace placeholders in helpers template
                 helpers_code = helpers_template.replace("{{company_name}}", company_name)
-                helpers_code = helpers_code.replace("{{project_id}}", project_id)
                 helpers_code = helpers_code.replace("{{default_callback}}", default_callback)
+                
+                # Apply environment variable injection
+                if BAAS_API_KEY:
+                    helpers_code = helpers_code.replace('your-api-key', BAAS_API_KEY)
                 
                 code += "\n\n" + helpers_code
                 
@@ -311,15 +305,13 @@ async def create_message_service_template(
                 project_helpers = f'''
 // {company_name} Project-Specific Helpers
 const PROJECT_CONFIG = {{
-    PROJECT_ID: '{project_id}',
     DEFAULT_CALLBACK: '{default_callback}',
     COMPANY_NAME: '{company_name}'
 }};
 
 // Pre-configured service instance
 const messageService = new BaaSMessageService(
-    process.env.BAAS_API_KEY || 'your-api-key',
-    PROJECT_CONFIG.PROJECT_ID
+    process.env.BAAS_API_KEY || '{BAAS_API_KEY if BAAS_API_KEY else "your-api-key"}'
 );
 
 // Helper functions for common use cases
@@ -349,7 +341,8 @@ async function sendOrderConfirmation(phoneNumber, orderNumber, memberCode) {{
             "filename": f"{company_name.lower().replace(' ', '_')}_message_service.{language}",
             "description": f"{company_name} 전용 메시지 서비스 템플릿",
             "source": "CDN template + project customization",
-            "message": "프로젝트별 맞춤 코드가 생성되었습니다 (CDN 최적화)"
+            "api_key_injected": bool(BAAS_API_KEY),
+            "message": f"프로젝트별 맞춤 코드가 생성되었습니다 (CDN 최적화, API Key {'주입됨' if BAAS_API_KEY else '미설정'})"
         }
         
     except Exception as e:
@@ -376,13 +369,14 @@ async def get_integration_guide(
         
     Returns:
         Step-by-step integration guide with platform-specific instructions fetched from CDN
+        Updated for new /api/message/ endpoints and X-API-KEY authentication
     """
     try:
         platform = platform.lower()
         deployment_type = deployment_type.lower()
         
         # Try to fetch guide from CDN
-        guide_url = f"https://cdn.baas-templates.com/sms-mms/deployment/{platform}-{deployment_type}.md"
+        guide_url = f"https://cdn.mbaas.kr/templates/sms-mms/deployment/{platform}-{deployment_type}.md"
         
         try:
             response = await client.get(guide_url)
@@ -396,6 +390,11 @@ async def get_integration_guide(
                     "guide_content": guide_content,
                     "source": "CDN",
                     "guide_url": guide_url,
+                    "api_changes": {
+                        "endpoints": "Updated to /api/message/sms and /api/message/mms",
+                        "authentication": "X-API-KEY header only (no project_id needed)",
+                        "breaking_changes": "Project ID parameter removed from API calls"
+                    },
                     "security_checklist": [
                         "API 키를 코드에 하드코딩하지 않기",
                         "환경 변수 또는 시크릿 관리 서비스 사용",
@@ -408,38 +407,38 @@ async def get_integration_guide(
             # Fallback to basic guides if CDN unavailable
             pass
         
-        # Fallback guides
+        # Fallback guides with updated API information
         basic_guides = {
             "vercel": {
                 "title": "Vercel 배포 가이드",
                 "steps": [
-                    "1. 환경 변수 설정: BAAS_API_KEY, BAAS_PROJECT_ID",
+                    "1. 환경 변수 설정: BAAS_API_KEY (PROJECT_ID 불필요)",
                     "2. vercel.json 설정에 환경 변수 추가",
-                    "3. API Routes에서 BaaSMessageService 사용",
-                    "4. Edge Runtime 호환성 확인"
+                    "3. API Routes에서 /api/message/ 엔드포인트 사용",
+                    "4. X-API-KEY 헤더로 인증 처리"
                 ],
                 "config": {
                     "env_vars": "Vercel Dashboard > Settings > Environment Variables",
                     "api_routes": "/api/send-sms.js 형태로 구현",
-                    "limitations": "Edge Runtime에서는 Node.js APIs 제한"
+                    "endpoints": "/api/message/sms, /api/message/mms"
                 }
             },
             "netlify": {
                 "title": "Netlify Functions 가이드",
                 "steps": [
                     "1. netlify/functions 디렉토리에 함수 생성",
-                    "2. 환경 변수를 Netlify 대시보드에서 설정",
-                    "3. BaaSMessageService를 Serverless Function에서 사용",
-                    "4. 빌드 설정에 필요한 패키지 의존성 추가"
+                    "2. 환경 변수 BAAS_API_KEY를 Netlify 대시보드에서 설정",
+                    "3. X-API-KEY 헤더로 인증하는 함수 구현",
+                    "4. /api/message/ 엔드포인트 사용"
                 ]
             },
             "docker": {
                 "title": "Docker 컨테이너 배포",
                 "steps": [
                     "1. Dockerfile에 필요한 의존성 설치",
-                    "2. ENV 명령어로 환경 변수 설정",
-                    "3. 또는 docker run -e 옵션 사용",
-                    "4. 네트워크 접근성 확인 (api.aiapp.link)"
+                    "2. ENV BAAS_API_KEY로 환경 변수 설정",
+                    "3. 또는 docker run -e BAAS_API_KEY 옵션 사용",
+                    "4. 네트워크 접근성 확인 (api.aiapp.link/api/message/)"
                 ]
             }
         }
@@ -451,14 +450,14 @@ async def get_integration_guide(
                 "success": False,
                 "error": f"플랫폼 '{platform}'에 대한 가이드가 아직 준비되지 않았습니다",
                 "available_platforms": list(basic_guides.keys()),
-                "cdn_url": f"https://cdn.baas-templates.com/sms-mms/deployment/",
+                "cdn_url": f"https://cdn.mbaas.kr/templates/sms-mms/deployment/",
                 "error_code": "PLATFORM_NOT_SUPPORTED"
             }
         
         # Add deployment-specific notes
         deployment_notes = {
             "development": "개발 환경에서는 .env 파일 사용 권장",
-            "staging": "스테이징 환경에서는 별도 프로젝트 ID 사용",
+            "staging": "스테이징 환경에서는 별도 API 키 사용",
             "production": "프로덕션에서는 환경 변수 암호화 및 로깅 설정 필요"
         }
         
@@ -469,6 +468,11 @@ async def get_integration_guide(
             "guide": guide,
             "source": "Local fallback",
             "deployment_notes": deployment_notes.get(deployment_type, ""),
+            "api_changes": {
+                "endpoints": "Updated to /api/message/sms and /api/message/mms",
+                "authentication": "X-API-KEY header only (no project_id needed)",
+                "breaking_changes": "Project ID parameter removed from API calls"
+            },
             "security_checklist": [
                 "API 키를 코드에 하드코딩하지 않기",
                 "환경 변수 또는 시크릿 관리 서비스 사용",
@@ -485,884 +489,6 @@ async def get_integration_guide(
             "error_code": "GUIDE_RETRIEVAL_ERROR"
         }
 
-# Code generation functions
-def generate_javascript_code(framework: Optional[str] = None, include_examples: bool = True) -> str:
-    """Generate JavaScript code for direct BaaS API calls"""
-    
-    base_code = '''/**
- * BaaS SMS/MMS Direct API Client
- * Directly calls https://api.aiapp.link without MCP
- */
-
-class BaaSMessageService {
-    constructor(apiKey, projectId, baseUrl = 'https://api.aiapp.link') {
-        this.apiKey = apiKey;
-        this.projectId = projectId;
-        this.baseUrl = baseUrl;
-    }
-    
-    /**
-     * Send SMS message
-     * @param {Array} recipients - Array of {phone_number, member_code}
-     * @param {string} message - Message content (max 2000 chars)
-     * @param {string} callbackNumber - Sender callback number
-     * @returns {Promise<Object>} Response object
-     */
-    async sendSMS(recipients, message, callbackNumber) {
-        try {
-            const response = await fetch(`${this.baseUrl}/message/sms`, {
-                method: 'POST',
-                headers: {
-                    'X-API-KEY': this.apiKey,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    recipients: recipients,
-                    message: message,
-                    callback_number: callbackNumber,
-                    project_id: this.projectId,
-                    channel_id: 1
-                })
-            });
-            
-            const result = await response.json();
-            
-            if (response.ok && result.success) {
-                return {
-                    success: true,
-                    groupId: result.data.group_id,
-                    message: 'SMS sent successfully'
-                };
-            } else {
-                return {
-                    success: false,
-                    error: result.message || 'Send failed',
-                    errorCode: result.error_code
-                };
-            }
-        } catch (error) {
-            return {
-                success: false,
-                error: `Network error: ${error.message}`
-            };
-        }
-    }
-    
-    /**
-     * Send MMS message with images
-     * @param {Array} recipients - Array of {phone_number, member_code}
-     * @param {string} message - Message content
-     * @param {string} subject - MMS subject (max 40 chars)
-     * @param {string} callbackNumber - Sender callback number
-     * @param {Array} imageUrls - Array of image URLs (max 5)
-     * @returns {Promise<Object>} Response object
-     */
-    async sendMMS(recipients, message, subject, callbackNumber, imageUrls = []) {
-        try {
-            const response = await fetch(`${this.baseUrl}/message/mms`, {
-                method: 'POST',
-                headers: {
-                    'X-API-KEY': this.apiKey,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    recipients: recipients,
-                    message: message,
-                    subject: subject,
-                    callback_number: callbackNumber,
-                    project_id: this.projectId,
-                    channel_id: 3,
-                    img_url_list: imageUrls
-                })
-            });
-            
-            const result = await response.json();
-            
-            if (response.ok && result.success) {
-                return {
-                    success: true,
-                    groupId: result.data.group_id,
-                    message: 'MMS sent successfully'
-                };
-            } else {
-                return {
-                    success: false,
-                    error: result.message || 'Send failed',
-                    errorCode: result.error_code
-                };
-            }
-        } catch (error) {
-            return {
-                success: false,
-                error: `Network error: ${error.message}`
-            };
-        }
-    }
-    
-    /**
-     * Check message delivery status
-     * @param {number} groupId - Message group ID
-     * @returns {Promise<Object>} Status information
-     */
-    async getMessageStatus(groupId) {
-        try {
-            const response = await fetch(
-                `${this.baseUrl}/message/send_history/sms/${groupId}/messages`,
-                {
-                    method: 'GET',
-                    headers: {
-                        'X-API-KEY': this.apiKey,
-                        'Content-Type': 'application/json'
-                    }
-                }
-            );
-            
-            const result = await response.json();
-            
-            if (response.ok && result.success) {
-                const messages = result.data || [];
-                const totalCount = messages.length;
-                const successCount = messages.filter(msg => msg.result === '성공').length;
-                const failedCount = messages.filter(msg => msg.result === '실패').length;
-                const pendingCount = totalCount - successCount - failedCount;
-                
-                let status = '전송중';
-                if (pendingCount === 0) {
-                    status = failedCount === 0 ? '성공' : 
-                            (successCount === 0 ? '실패' : '부분성공');
-                }
-                
-                return {
-                    groupId: groupId,
-                    status: status,
-                    totalCount: totalCount,
-                    successCount: successCount,
-                    failedCount: failedCount,
-                    pendingCount: pendingCount,
-                    messages: messages.map(msg => ({
-                        phone: msg.phone,
-                        name: msg.name,
-                        status: msg.result,
-                        reason: msg.reason
-                    }))
-                };
-            } else {
-                return {
-                    success: false,
-                    error: result.message || 'Status check failed'
-                };
-            }
-        } catch (error) {
-            return {
-                success: false,
-                error: `Network error: ${error.message}`
-            };
-        }
-    }
-}'''
-
-    # Framework-specific additions
-    if framework == 'react':
-        base_code += '''
-
-/**
- * React Hook for BaaS SMS service
- */
-import { useState, useCallback } from 'react';
-
-export function useBaaSMessageService(apiKey, projectId) {
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
-    
-    const service = new BaaSMessageService(apiKey, projectId);
-    
-    const sendSMS = useCallback(async (recipients, message, callbackNumber) => {
-        setLoading(true);
-        setError(null);
-        
-        try {
-            const result = await service.sendSMS(recipients, message, callbackNumber);
-            return result;
-        } catch (err) {
-            setError(err.message);
-            throw err;
-        } finally {
-            setLoading(false);
-        }
-    }, [service]);
-    
-    const sendMMS = useCallback(async (recipients, message, subject, callbackNumber, imageUrls) => {
-        setLoading(true);
-        setError(null);
-        
-        try {
-            const result = await service.sendMMS(recipients, message, subject, callbackNumber, imageUrls);
-            return result;
-        } catch (err) {
-            setError(err.message);
-            throw err;
-        } finally {
-            setLoading(false);
-        }
-    }, [service]);
-    
-    return {
-        sendSMS,
-        sendMMS,
-        getMessageStatus: service.getMessageStatus.bind(service),
-        loading,
-        error
-    };
-}'''
-    
-    elif framework == 'vue':
-        base_code += '''
-
-/**
- * Vue 3 Composition API for BaaS SMS service
- */
-import { ref, reactive } from 'vue';
-
-export function useBaaSMessageService(apiKey, projectId) {
-    const loading = ref(false);
-    const error = ref(null);
-    
-    const service = new BaaSMessageService(apiKey, projectId);
-    
-    const sendSMS = async (recipients, message, callbackNumber) => {
-        loading.value = true;
-        error.value = null;
-        
-        try {
-            const result = await service.sendSMS(recipients, message, callbackNumber);
-            return result;
-        } catch (err) {
-            error.value = err.message;
-            throw err;
-        } finally {
-            loading.value = false;
-        }
-    };
-    
-    const sendMMS = async (recipients, message, subject, callbackNumber, imageUrls) => {
-        loading.value = true;
-        error.value = null;
-        
-        try {
-            const result = await service.sendMMS(recipients, message, subject, callbackNumber, imageUrls);
-            return result;
-        } catch (err) {
-            error.value = err.message;
-            throw err;
-        } finally {
-            loading.value = false;
-        }
-    };
-    
-    return {
-        sendSMS,
-        sendMMS,
-        getMessageStatus: service.getMessageStatus.bind(service),
-        loading,
-        error
-    };
-}'''
-
-    # Add usage examples
-    if include_examples:
-        base_code += '''
-
-// Usage Examples
-
-// Example 1: Basic SMS sending
-const messageService = new BaaSMessageService('your-api-key', 'your-project-id');
-
-const recipients = [
-    { phone_number: "010-1234-5678", member_code: "user_001" }
-];
-
-// Send SMS
-messageService.sendSMS(
-    recipients,
-    "안녕하세요! 인증번호는 123456입니다.",
-    "02-1234-5678"
-).then(result => {
-    console.log('SMS Result:', result);
-    if (result.success) {
-        // Check status
-        return messageService.getMessageStatus(result.groupId);
-    }
-}).then(status => {
-    console.log('Status:', status);
-});
-
-// Example 2: MMS with images
-messageService.sendMMS(
-    recipients,
-    "신상품 출시 안내드립니다!",
-    "신상품 알림",
-    "02-1234-5678",
-    ["https://example.com/product.jpg"]
-).then(result => {
-    console.log('MMS Result:', result);
-});
-
-// Example 3: Environment-based configuration
-const apiKey = process.env.BAAS_API_KEY || 'your-api-key';
-const projectId = process.env.BAAS_PROJECT_ID || 'your-project-id';
-const service = new BaaSMessageService(apiKey, projectId);'''
-
-    # Node.js export
-    base_code += '''
-
-// Node.js export
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { BaaSMessageService };
-}
-
-// ES6 export
-export { BaaSMessageService };'''
-
-    return base_code
-
-def generate_python_code(framework: Optional[str] = None, include_examples: bool = True) -> str:
-    """Generate Python code for direct BaaS API calls"""
-    
-    base_code = '''"""
-BaaS SMS/MMS Direct API Client
-Directly calls https://api.aiapp.link without MCP
-"""
-
-import requests
-import json
-from typing import List, Dict, Optional, Union
-
-class BaaSMessageService:
-    def __init__(self, api_key: str, project_id: str, base_url: str = 'https://api.aiapp.link'):
-        self.api_key = api_key
-        self.project_id = project_id
-        self.base_url = base_url
-        
-    def send_sms(self, recipients: List[Dict], message: str, callback_number: str) -> Dict:
-        """
-        Send SMS message
-        
-        Args:
-            recipients: List of {phone_number, member_code}
-            message: Message content (max 2000 chars)
-            callback_number: Sender callback number
-            
-        Returns:
-            Dict: Response object
-        """
-        try:
-            headers = {
-                'X-API-KEY': self.api_key,
-                'Content-Type': 'application/json'
-            }
-            
-            payload = {
-                'recipients': recipients,
-                'message': message,
-                'callback_number': callback_number,
-                'project_id': self.project_id,
-                'channel_id': 1
-            }
-            
-            response = requests.post(
-                f'{self.base_url}/message/sms',
-                headers=headers,
-                json=payload,
-                timeout=30
-            )
-            
-            result = response.json()
-            
-            if response.status_code == 200 and result.get('success'):
-                return {
-                    'success': True,
-                    'group_id': result['data']['group_id'],
-                    'message': 'SMS sent successfully'
-                }
-            else:
-                return {
-                    'success': False,
-                    'error': result.get('message', 'Send failed'),
-                    'error_code': result.get('error_code')
-                }
-                
-        except requests.exceptions.RequestException as e:
-            return {
-                'success': False,
-                'error': f'Network error: {str(e)}'
-            }
-    
-    def send_mms(self, recipients: List[Dict], message: str, subject: str, 
-                callback_number: str, image_urls: Optional[List[str]] = None) -> Dict:
-        """
-        Send MMS message with images
-        
-        Args:
-            recipients: List of {phone_number, member_code}
-            message: Message content
-            subject: MMS subject (max 40 chars)
-            callback_number: Sender callback number
-            image_urls: List of image URLs (max 5)
-            
-        Returns:
-            Dict: Response object
-        """
-        try:
-            headers = {
-                'X-API-KEY': self.api_key,
-                'Content-Type': 'application/json'
-            }
-            
-            payload = {
-                'recipients': recipients,
-                'message': message,
-                'subject': subject,
-                'callback_number': callback_number,
-                'project_id': self.project_id,
-                'channel_id': 3,
-                'img_url_list': image_urls or []
-            }
-            
-            response = requests.post(
-                f'{self.base_url}/message/mms',
-                headers=headers,
-                json=payload,
-                timeout=30
-            )
-            
-            result = response.json()
-            
-            if response.status_code == 200 and result.get('success'):
-                return {
-                    'success': True,
-                    'group_id': result['data']['group_id'],
-                    'message': 'MMS sent successfully'
-                }
-            else:
-                return {
-                    'success': False,
-                    'error': result.get('message', 'Send failed'),
-                    'error_code': result.get('error_code')
-                }
-                
-        except requests.exceptions.RequestException as e:
-            return {
-                'success': False,
-                'error': f'Network error: {str(e)}'
-            }
-    
-    def get_message_status(self, group_id: int) -> Dict:
-        """
-        Check message delivery status
-        
-        Args:
-            group_id: Message group ID
-            
-        Returns:
-            Dict: Status information
-        """
-        try:
-            headers = {
-                'X-API-KEY': self.api_key,
-                'Content-Type': 'application/json'
-            }
-            
-            response = requests.get(
-                f'{self.base_url}/message/send_history/sms/{group_id}/messages',
-                headers=headers,
-                timeout=30
-            )
-            
-            result = response.json()
-            
-            if response.status_code == 200 and result.get('success'):
-                messages = result.get('data', [])
-                total_count = len(messages)
-                success_count = sum(1 for msg in messages if msg.get('result') == '성공')
-                failed_count = sum(1 for msg in messages if msg.get('result') == '실패')
-                pending_count = total_count - success_count - failed_count
-                
-                if pending_count > 0:
-                    status = '전송중'
-                elif failed_count == 0:
-                    status = '성공'
-                else:
-                    status = '실패' if success_count == 0 else '부분성공'
-                
-                return {
-                    'group_id': group_id,
-                    'status': status,
-                    'total_count': total_count,
-                    'success_count': success_count,
-                    'failed_count': failed_count,
-                    'pending_count': pending_count,
-                    'messages': [
-                        {
-                            'phone': msg.get('phone', ''),
-                            'name': msg.get('name', ''),
-                            'status': msg.get('result', ''),
-                            'reason': msg.get('reason')
-                        }
-                        for msg in messages
-                    ]
-                }
-            else:
-                return {
-                    'success': False,
-                    'error': result.get('message', 'Status check failed')
-                }
-                
-        except requests.exceptions.RequestException as e:
-            return {
-                'success': False,
-                'error': f'Network error: {str(e)}'
-            }'''
-
-    # Framework-specific additions
-    if framework == 'django':
-        base_code += '''
-
-# Django integration
-from django.conf import settings
-from django.core.cache import cache
-
-class DjangoBaaSMessageService(BaaSMessageService):
-    def __init__(self, project_id: str = None):
-        api_key = getattr(settings, 'BAAS_API_KEY', None)
-        project_id = project_id or getattr(settings, 'BAAS_PROJECT_ID', None)
-        
-        if not api_key:
-            raise ValueError("BAAS_API_KEY must be set in Django settings")
-        if not project_id:
-            raise ValueError("BAAS_PROJECT_ID must be provided or set in Django settings")
-            
-        super().__init__(api_key, project_id)
-    
-    def send_sms_cached(self, recipients: List[Dict], message: str, callback_number: str, cache_timeout: int = 300) -> Dict:
-        """Send SMS with caching for duplicate prevention"""
-        cache_key = f"baas_sms_{hash(str(recipients))}{hash(message)}"
-        
-        cached_result = cache.get(cache_key)
-        if cached_result:
-            return cached_result
-            
-        result = self.send_sms(recipients, message, callback_number)
-        
-        if result.get('success'):
-            cache.set(cache_key, result, cache_timeout)
-            
-        return result'''
-
-    elif framework == 'fastapi':
-        base_code += '''
-
-# FastAPI integration
-from fastapi import HTTPException, Depends
-from pydantic import BaseModel
-from typing import List
-
-class SMSRequest(BaseModel):
-    recipients: List[Dict[str, str]]
-    message: str
-    callback_number: str
-
-class MMSRequest(BaseModel):
-    recipients: List[Dict[str, str]]
-    message: str
-    subject: str
-    callback_number: str
-    image_urls: Optional[List[str]] = []
-
-def get_baas_service():
-    """FastAPI dependency for BaaS service"""
-    import os
-    api_key = os.getenv('BAAS_API_KEY')
-    project_id = os.getenv('BAAS_PROJECT_ID')
-    
-    if not api_key or not project_id:
-        raise HTTPException(status_code=500, detail="BaaS configuration missing")
-        
-    return BaaSMessageService(api_key, project_id)
-
-# FastAPI route examples
-async def send_sms_endpoint(request: SMSRequest, service: BaaSMessageService = Depends(get_baas_service)):
-    result = service.send_sms(request.recipients, request.message, request.callback_number)
-    
-    if not result.get('success'):
-        raise HTTPException(status_code=400, detail=result.get('error'))
-        
-    return result'''
-
-    # Add usage examples
-    if include_examples:
-        base_code += '''
-
-# Usage Examples
-if __name__ == "__main__":
-    import os
-    
-    # Configuration from environment variables
-    api_key = os.getenv('BAAS_API_KEY', 'your-api-key')
-    project_id = os.getenv('BAAS_PROJECT_ID', 'your-project-id')
-    
-    # Create service instance
-    service = BaaSMessageService(api_key, project_id)
-    
-    # Example 1: Send SMS
-    recipients = [
-        {"phone_number": "010-1234-5678", "member_code": "user_001"}
-    ]
-    
-    sms_result = service.send_sms(
-        recipients,
-        "안녕하세요! 인증번호는 123456입니다.",
-        "02-1234-5678"
-    )
-    print("SMS Result:", sms_result)
-    
-    # Example 2: Send MMS
-    if sms_result.get('success'):
-        mms_result = service.send_mms(
-            recipients,
-            "이미지가 포함된 MMS입니다.",
-            "MMS 테스트",
-            "02-1234-5678",
-            ["https://example.com/image.jpg"]
-        )
-        print("MMS Result:", mms_result)
-        
-        # Example 3: Check status
-        if mms_result.get('success'):
-            status = service.get_message_status(mms_result['group_id'])
-            print("Message Status:", status)'''
-
-    return base_code
-
-def generate_php_code(framework: Optional[str] = None, include_examples: bool = True) -> str:
-    """Generate PHP code for direct BaaS API calls"""
-    
-    base_code = '''<?php
-/**
- * BaaS SMS/MMS Direct API Client
- * Directly calls https://api.aiapp.link without MCP
- */
-
-class BaaSMessageService {
-    private $apiKey;
-    private $projectId;
-    private $baseUrl;
-    
-    public function __construct($apiKey, $projectId, $baseUrl = 'https://api.aiapp.link') {
-        $this->apiKey = $apiKey;
-        $this->projectId = $projectId;
-        $this->baseUrl = $baseUrl;
-    }
-    
-    /**
-     * Send SMS message
-     * @param array $recipients Array of ['phone_number' => '', 'member_code' => '']
-     * @param string $message Message content (max 2000 chars)
-     * @param string $callbackNumber Sender callback number
-     * @return array Response array
-     */
-    public function sendSMS($recipients, $message, $callbackNumber) {
-        $payload = [
-            'recipients' => $recipients,
-            'message' => $message,
-            'callback_number' => $callbackNumber,
-            'project_id' => $this->projectId,
-            'channel_id' => 1
-        ];
-        
-        return $this->makeRequest('/message/sms', $payload);
-    }
-    
-    /**
-     * Send MMS message with images
-     * @param array $recipients Array of recipients
-     * @param string $message Message content
-     * @param string $subject MMS subject (max 40 chars)
-     * @param string $callbackNumber Sender callback number
-     * @param array $imageUrls Array of image URLs (max 5)
-     * @return array Response array
-     */
-    public function sendMMS($recipients, $message, $subject, $callbackNumber, $imageUrls = []) {
-        $payload = [
-            'recipients' => $recipients,
-            'message' => $message,
-            'subject' => $subject,
-            'callback_number' => $callbackNumber,
-            'project_id' => $this->projectId,
-            'channel_id' => 3,
-            'img_url_list' => $imageUrls
-        ];
-        
-        return $this->makeRequest('/message/mms', $payload);
-    }
-    
-    /**
-     * Check message delivery status
-     * @param int $groupId Message group ID
-     * @return array Status information
-     */
-    public function getMessageStatus($groupId) {
-        $url = "/message/send_history/sms/{$groupId}/messages";
-        return $this->makeRequest($url, null, 'GET');
-    }
-    
-    /**
-     * Make HTTP request to BaaS API
-     * @param string $endpoint API endpoint
-     * @param array|null $payload Request payload
-     * @param string $method HTTP method
-     * @return array Response array
-     */
-    private function makeRequest($endpoint, $payload = null, $method = 'POST') {
-        $headers = [
-            'X-API-KEY: ' . $this->apiKey,
-            'Content-Type: application/json'
-        ];
-        
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $this->baseUrl . $endpoint);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-        
-        if ($method === 'POST') {
-            curl_setopt($ch, CURLOPT_POST, true);
-            if ($payload) {
-                curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
-            }
-        }
-        
-        $response = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $error = curl_error($ch);
-        curl_close($ch);
-        
-        if ($response === false || !empty($error)) {
-            return [
-                'success' => false,
-                'error' => 'cURL error: ' . $error
-            ];
-        }
-        
-        $result = json_decode($response, true);
-        
-        if ($httpCode === 200 && isset($result['success']) && $result['success']) {
-            return [
-                'success' => true,
-                'group_id' => $result['data']['group_id'] ?? null,
-                'message' => 'Request successful'
-            ];
-        } else {
-            return [
-                'success' => false,
-                'error' => $result['message'] ?? 'Request failed',
-                'error_code' => $result['error_code'] ?? null
-            ];
-        }
-    }
-}'''
-
-    # Framework-specific additions
-    if framework == 'laravel':
-        base_code += '''
-
-/**
- * Laravel Service Provider integration
- */
-namespace App\\Services;
-
-use Illuminate\\Support\\Facades\\Config;
-use Illuminate\\Support\\Facades\\Cache;
-
-class LaravelBaaSMessageService extends BaaSMessageService {
-    public function __construct($projectId = null) {
-        $apiKey = Config::get('services.baas.api_key');
-        $projectId = $projectId ?: Config::get('services.baas.project_id');
-        
-        if (!$apiKey || !$projectId) {
-            throw new \\Exception('BaaS configuration missing in config/services.php');
-        }
-        
-        parent::__construct($apiKey, $projectId);
-    }
-    
-    /**
-     * Send SMS with Laravel caching
-     */
-    public function sendSMSCached($recipients, $message, $callbackNumber, $cacheMinutes = 5) {
-        $cacheKey = 'baas_sms_' . md5(serialize($recipients) . $message);
-        
-        return Cache::remember($cacheKey, $cacheMinutes, function() use ($recipients, $message, $callbackNumber) {
-            return $this->sendSMS($recipients, $message, $callbackNumber);
-        });
-    }
-}
-
-// Add to config/services.php:
-/*
-'baas' => [
-    'api_key' => env('BAAS_API_KEY'),
-    'project_id' => env('BAAS_PROJECT_ID'),
-],
-*/'''
-
-    # Add usage examples
-    if include_examples:
-        base_code += '''
-
-// Usage Examples
-
-// Basic usage
-$apiKey = $_ENV['BAAS_API_KEY'] ?? 'your-api-key';
-$projectId = $_ENV['BAAS_PROJECT_ID'] ?? 'your-project-id';
-
-$service = new BaaSMessageService($apiKey, $projectId);
-
-// Example 1: Send SMS
-$recipients = [
-    ['phone_number' => '010-1234-5678', 'member_code' => 'user_001']
-];
-
-$smsResult = $service->sendSMS(
-    $recipients,
-    '안녕하세요! 인증번호는 123456입니다.',
-    '02-1234-5678'
-);
-
-echo "SMS Result: " . json_encode($smsResult) . "\\n";
-
-// Example 2: Send MMS
-if ($smsResult['success']) {
-    $mmsResult = $service->sendMMS(
-        $recipients,
-        '이미지가 포함된 MMS입니다.',
-        'MMS 테스트',
-        '02-1234-5678',
-        ['https://example.com/image.jpg']
-    );
-    
-    echo "MMS Result: " . json_encode($mmsResult) . "\\n";
-    
-    // Example 3: Check status
-    if ($mmsResult['success'] && isset($mmsResult['group_id'])) {
-        $status = $service->getMessageStatus($mmsResult['group_id']);
-        echo "Status: " . json_encode($status) . "\\n";
-    }
-}
-
-?>'''
-
-    return base_code
-
 # Cleanup function to close HTTP client
 async def cleanup():
     await client.aclose()
@@ -1372,6 +498,10 @@ def main():
     print("BaaS SMS/MMS MCP 서버를 시작합니다...")
     print(f"API 기본 URL: {API_BASE_URL}")
     print(f"API 키: {'설정됨' if BAAS_API_KEY else '설정되지 않음'}")
+    print("주요 변경사항:")
+    print("- API 경로: /api/message/sms, /api/message/mms")
+    print("- 인증: X-API-KEY 헤더만 사용 (PROJECT_ID 불필요)")
+    print("- CDN 기반 템플릿 제공으로 토큰 최적화")
     
     try:
         mcp.run(transport="stdio")
