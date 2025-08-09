@@ -7,6 +7,10 @@
 
 A Model Context Protocol (MCP) server that enables Claude to generate SMS/MMS implementation code for your projects. When you ask Claude to implement messaging features, it will generate code that directly calls the BaaS API at `https://api.aiapp.link`, eliminating the need for you to write API integration code manually.
 
+<a href="https://glama.ai/mcp/servers/@jjunmomo/BaaS-MCP">
+  <img width="380" height="200" src="https://glama.ai/mcp/servers/@jjunmomo/BaaS-MCP/badge" alt="BaaS SMS/Server MCP server" />
+</a>
+
 ## Features
 
 - **Code Generation**: Claude generates ready-to-use SMS/MMS code for your projects
