@@ -125,6 +125,10 @@ git push origin $CURRENT_BRANCH --follow-tags
 echo -e "${BLUE}📦 Publishing to NPM...${NC}"
 npm publish
 
+# Clean up generated tgz files
+echo -e "${BLUE}🧹 Cleaning up generated tgz files...${NC}"
+rm -f *.tgz
+
 # Success message
 echo -e "${GREEN}🎉 Successfully published ${NEW_VERSION} to NPM!${NC}"
 echo -e "${GREEN}📋 Summary:${NC}"
