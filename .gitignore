@@ -60,6 +60,10 @@ yarn-debug.log*
 yarn-error.log*
 *.tgz
 
+# Deployment scripts (security - do not expose deployment processes in public repos)
+deploy*.sh
+scripts/deploy*.sh
+
 # Environment variables
 .env.local
 .env.production
