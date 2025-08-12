@@ -1,6 +1,6 @@
 {
   "name": "baas-sms-mcp",
-  "version": "1.0.18",
+  "version": "1.0.25",
   "description": "A Model Context Protocol server for SMS and MMS messaging services",
   "main": "index.js",
   "bin": {
@@ -47,8 +47,8 @@
     "requirements.txt",
     "baas_sms_mcp/",
     "llms.txt",
+    "README.eng.md",
     "README.md",
-    "README.ko.md",
     "LICENSE"
   ],
   "preferGlobal": true

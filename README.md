@@ -1,80 +1,106 @@
-# BaaS SMS/MCP Server
+# BaaS SMS/MMS MCP 서버
 
 [![npm version](https://badge.fury.io/js/baas-sms-mcp.svg)](https://badge.fury.io/js/baas-sms-mcp)
 [![PyPI version](https://badge.fury.io/py/baas-sms-mcp.svg)](https://badge.fury.io/py/baas-sms-mcp)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A Model Context Protocol (MCP) server that enables Claude to generate SMS/MMS implementation code for your projects. When you ask Claude to implement messaging features, it will generate code that directly calls the BaaS API at `https://api.aiapp.link`, eliminating the need for you to write API integration code manually.
+지능형 코드 생성과 CDN 최적화 템플릿을 통해 BaaS 플랫폼과의 원활한 통합을 제공하는 SMS 및 MMS 메시징 서비스용 종합 모델 컨텍스트 프로토콜 서버입니다.
+
+<a href="https://glama.ai/mcp/servers/@jjunmomo/BaaS-MCP">
+  <img width="380" height="200" src="https://glama.ai/mcp/servers/@jjunmomo/BaaS-MCP/badge" alt="BaaS SMS/Server MCP server" />
+</a>
 
 ## Features
+=======
+## 🚀 개요
 
-- **Code Generation**: Claude generates ready-to-use SMS/MMS code for your projects
-- **Direct API Integration**: Generated code calls `https://api.aiapp.link` directly
-- **Multi-Framework Support**: Generates code for React, Vue, Node.js, Python, Django, and more
-- **Complete Implementation**: Includes error handling, validation, and status checking
-- **Copy-Paste Ready**: Generated code can be directly copied to your project
-- **Project Isolation**: Multi-tenant support with project-based access control
-- **Real-time Status**: Code for checking delivery status and message history
 
-## Use Cases
+이 MCP 서버는 AI 개발 워크플로우와 BaaS 메시징 플랫폼 사이의 브리지 역할을 하며 다음을 제공합니다:
 
-- **Authentication**: SMS verification codes for user registration/login
-- **Notifications**: Order confirmations, shipping updates, alerts
-- **Marketing**: Promotional messages, event notifications
-- **Two-Factor Authentication**: Security verification messages
-- **Customer Support**: Automated support messages and updates
+- **지능형 코드 생성**: SMS/MMS 통합을 위한 프로덕션 준비 코드 생성
+- **CDN 최적화 템플릿**: CDN에서 유지보수되는 최신 코드 템플릿 가져오기
+- **다중 언어 및 프레임워크 지원**: React, Vue, Django, Laravel 등과 함께 JavaScript, Python, PHP
+- **토큰 효율성**: CDN 기반 템플릿 가져오기를 통한 토큰 사용량 최소화
+- **환경 통합**: 자동 API 키 주입 및 환경 변수 관리
+- **플랫폼별 가이드**: 주요 플랫폼용 배포 및 통합 가이드
 
-## Installation
+## 📋 아키텍처
 
-### Using npm (Recommended)
+### 시스템 구성요소
 
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    MCP 클라이언트                                 │
+└─────────────────────────┬───────────────────────────────────────┘
+                          │ MCP 프로토콜
+┌─────────────────────────▼───────────────────────────────────────┐
+│                    Node.js 래퍼 (index.js)                       │
+│                   - 크로스 플랫폼 호환성                             │
+│                   - 의존성 관리                                    │
+│                   - 프로세스 라이프사이클                             │
+└─────────────────────────┬───────────────────────────────────────┘
+                          │
+┌─────────────────────────▼───────────────────────────────────────┐
+│                Python MCP 서버 (server.py)                       │
+│                   - FastMCP 프레임워크                             │
+│                   - CDN 템플릿 가져오기                             │
+│                   - 코드 생성 및 커스터마이징                         │
+│                   - API 키 주입                                   │
+└─────────────────────────┬───────────────────────────────────────┘
+                          │ HTTPS
+┌─────────────────────────▼───────────────────────────────────────┐
+│                   CDN 템플릿 저장소                                │
+│                   - 언어별 템플릿                                  │
+│                   - 프레임워크 통합                                 │
+│                   - 배포 가이드                                   │
+│                   - 프로젝트 헬퍼                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### 템플릿 구조
+
+```
+templates/
+├── javascript/
+│   ├── vanilla.md          # 순수 JavaScript 구현
+│   └── react.md           # React 컴포넌트 통합
+├── python/
+│   ├── vanilla.md          # Python requests 기반
+│   └── django.md          # Django 통합
+├── php/
+│   └── vanilla.md          # PHP cURL 구현
+├── helpers/
+│   └── javascript-project.md  # 프로젝트별 유틸리티
+└── deployment/
+    └── vercel-production.md    # 플랫폼 배포 가이드
+```
+
+## 🛠 설치 및 설정
+
+### npm 설치 (권장)
 ```bash
 npm install -g baas-sms-mcp
 ```
 
-Or run directly without installation:
+### 로컬 개발 설정
 ```bash
-npx baas-sms-mcp
-```
-
-### Using pip
-
-```bash
-pip install baas-sms-mcp
-```
-
-### From Source
-
-```bash
-git clone https://github.com/your-org/baas-sms-mcp.git
-cd baas-sms-mcp
+git clone https://github.com/jjunmomo/BaaS-MCP.git
+cd BaaS-MCP
 npm install
-
-## Configuration
-
-Set the following environment variables:
-
-```bash
-export BAAS_API_KEY="your_baas_api_key_here"  
-export PROJECT_ID="your_project_uuid_here"
 ```
 
-Note: `BAAS_API_BASE_URL` is fixed to `https://api.aiapp.link` and doesn't need to be configured.
-
-## Usage
-
-### Command Line
-
-After installation, you can run the server directly:
-
+### Python 의존성
+서버가 Python 의존성을 자동으로 관리하지만, 수동으로 설치할 수도 있습니다:
 ```bash
-baas-sms-mcp
+pip install -r requirements.txt
 ```
 
-### With Claude Desktop
+## ⚙️ 구성
 
-Add this server to your Claude Desktop configuration:
+### MCP 클라이언트 설정
+
+MCP 클라이언트 구성 파일에 추가:
 
 ```json
 {
@@ -83,512 +109,314 @@ Add this server to your Claude Desktop configuration:
       "command": "npx",
       "args": ["baas-sms-mcp"],
       "env": {
-        "BAAS_API_KEY": "your_api_key",
-        "PROJECT_ID": "your_project_id"
+        "BAAS_API_KEY": "실제_API_키를_여기에_입력하세요"
       }
     }
   }
 }
 ```
 
-Or if installed globally:
+### 환경 변수
 
+| 변수 | 설명 | 필수 |
+|------|------|------|
+| `BAAS_API_KEY` | BaaS 플랫폼 API 키 | 예* |
+
+*생성된 코드에 자동 API 키 주입을 위해 필요합니다. 없어도 서버는 작동하지만 수동 키 구성이 필요합니다.
+
+## 🔧 사용 가능한 도구
+
+### 1. `get_code_template_url`
+**목적**: 토큰 오버헤드 없이 최적화된 코드 템플릿용 CDN URL 가져오기
+
+**매개변수:**
+- `language` (문자열): 프로그래밍 언어
+  - 지원: `javascript`, `python`, `php`, `java`, `go`, `csharp`
+- `framework` (선택사항): 프레임워크 이름
+  - JavaScript: `react`, `vue`, `angular`
+  - Python: `django`, `fastapi`, `flask`
+  - PHP: `laravel`, `symfony`
+- `deployment_platform` (선택사항): 대상 플랫폼
+  - `vercel`, `netlify`, `aws`, `docker` 등
+
+**반환값:**
 ```json
 {
-  "mcpServers": {
-    "baas-sms-mcp": {
-      "command": "baas-sms-mcp",
-      "env": {
-        "BAAS_API_KEY": "your_api_key",
-        "PROJECT_ID": "your_project_id"
-      }
-    }
+  "success": true,
+  "template_url": "https://cdn.mbaas.kr/templates/sms-mms/javascript/react.md",
+  "integration_url": "https://cdn.mbaas.kr/templates/sms-mms/deployment/vercel.md",
+  "api_endpoint": "https://api.aiapp.link/api/message/",
+  "configuration": {
+    "required_env_vars": ["BAAS_API_KEY"],
+    "api_key_injected": true
   }
 }
 ```
 
-### Programmatic Usage
+### 2. `generate_direct_api_code`
+**목적**: CDN 템플릿을 가져와 커스터마이징하여 프로덕션 준비 코드 생성
 
-```python
-from baas_sms_mcp import main
+**매개변수:**
+- `language` (문자열, 기본값: "javascript"): 대상 프로그래밍 언어
+- `framework` (선택사항): 프레임워크별 구현
+- `include_examples` (불린, 기본값: true): 사용 예제 포함
 
-# Run the MCP server
-main()
-```
-
-## How It Works
-
-When you ask Claude to implement SMS/MMS features in your project:
-
-1. **You ask:** "Implement SMS verification in my React app"
-2. **Claude generates:** Complete code that calls `https://api.aiapp.link` directly
-3. **You copy:** The generated code into your project
-4. **It works:** Your app sends SMS through BaaS API automatically
-
-## Developer Examples
-
-### Example 1: React SMS Verification
-
-**Prompt to Claude:**
-> "Create a React component with SMS verification for user registration"
-
-**Claude will generate code like this (copy-paste ready):**
-
-```javascript
-// Backend API endpoint (Express.js)
-app.post('/api/send-sms', async (req, res) => {
-  const { phoneNumber, message, memberCode } = req.body;
-  
-  try {
-    // Direct call to BaaS API
-    const response = await fetch('https://api.aiapp.link/message/sms', {
-      method: 'POST',
-      headers: {
-        'x_api_key': process.env.BAAS_API_KEY,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        recipients: [{ 
-          phone_number: phoneNumber, 
-          member_code: memberCode || `member_${Date.now()}` 
-        }],
-        message: message,
-        callback_number: "02-1234-5678", // Your business number
-        project_id: process.env.PROJECT_ID,
-        channel_id: 1 // SMS channel
-      })
-    });
-    
-    const result = await response.json();
-    res.json(result);
-    
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Frontend React component
-import React, { useState } from 'react';
-
-function SMSVerification() {
-  const [phone, setPhone] = useState('');
-  const [code, setCode] = useState('');
-  const [step, setStep] = useState('phone'); // 'phone' or 'verify'
-
-  const sendCode = async () => {
-    const verificationCode = Math.floor(100000 + Math.random() * 900000);
-    
-    const response = await fetch('/api/send-sms', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        phoneNumber: phone,
-        message: `[Your App] 인증번호는 ${verificationCode}입니다. 5분 내에 입력해주세요.`,
-        memberCode: 'user_' + Date.now()
-      })
-    });
-    
-    const result = await response.json();
-    if (result.success) {
-      setStep('verify');
-      // Store code for verification (use secure storage in production)
-      sessionStorage.setItem('verificationCode', verificationCode);
-    }
-  };
-
-  return (
-    <div>
-      {step === 'phone' ? (
-        <div>
-          <input 
-            type="tel" 
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder="010-1234-5678"
-          />
-          <button onClick={sendCode}>인증번호 발송</button>
-        </div>
-      ) : (
-        <div>
-          <input 
-            type="text" 
-            value={code}
-            onChange={(e) => setCode(e.target.value)}
-            placeholder="인증번호 입력"
-          />
-          <button onClick={() => {/* verify logic */}}>인증 확인</button>
-        </div>
-      )}
-    </div>
-  );
-}
-```
-
-### Example 2: Order Confirmation MMS
-
-**Prompt to Claude:**
-> "Send MMS with order details and product image when order is placed"
-
-**Claude will generate:**
-
-```python
-# Python/Django example
-def send_order_confirmation(order_id, customer_phone):
-    order = Order.objects.get(id=order_id)
-    
-    message = f"""
-    Order Confirmation #{order.id}
-    
-    Items: {order.get_items_summary()}
-    Total: ${order.total}
-    
-    Thank you for your order!
-    """
-    
-    # Send MMS with product image
-    result = send_mms(
-        recipients=[{
-            "phone_number": customer_phone,
-            "member_code": f"customer_{order.customer.id}"
-        }],
-        message=message,
-        subject="Order Confirmation",
-        callback_number="02-1234-5678",
-        image_urls=[order.get_product_image_url()]
-    )
-    
-    return result
-```
-
-### Example 3: Real-time Status Checking
-
-**Prompt to Claude:**
-> "Create a webhook endpoint that checks SMS delivery status"
-
-**Claude will generate:**
-
-```javascript
-// Real-time status checking
-app.get('/sms-status/:groupId', async (req, res) => {
-  const { groupId } = req.params;
-  
-  try {
-    const status = await checkMessageStatus(groupId);
-    
-    res.json({
-      groupId: status.group_id,
-      status: status.status,
-      delivered: status.success_count,
-      failed: status.failed_count,
-      pending: status.pending_count,
-      messages: status.messages
-    });
-  } catch (error) {
-    res.status(500).json({ error: "Failed to check status" });
-  }
-});
-```
-
-## Available Tools
-
-### 1. send_sms
-
-Send SMS message to one or multiple recipients.
-
-**Parameters:**
-- `recipients`: List of recipients with `phone_number` and `member_code`
-- `message`: SMS message content (max 2000 characters)
-- `callback_number`: Sender callback number
-- `project_id`: Project UUID (required)
-- `baas_api_key`: BaaS API key for authentication (required)
-
-**Example:**
-```python
-await send_sms(
-    recipients=[
-        {"phone_number": "010-1234-5678", "member_code": "user123"}
-    ],
-    message="Hello, this is a test SMS!",
-    callback_number="02-1234-5678"
-)
-```
-
-**Response:**
+**반환값:**
 ```json
 {
-    "success": true,
-    "group_id": 12345,
-    "message": "SMS sent successfully",
-    "sent_count": 1,
-    "failed_count": 0
+  "success": true,
+  "code": "// 완전한 구현 코드...",
+  "filename": "baas-sms-service.js",
+  "description": "직접 /api/message/ API 호출을 위한 JavaScript BaaS SMS 서비스",
+  "source": "CDN 템플릿",
+  "configuration": {
+    "env_vars": ["BAAS_API_KEY"],
+    "install": "npm install (종속성 포함)",
+    "api_key_injected": true
+  }
 }
 ```
 
-### 2. send_mms
+### 3. `create_message_service_template`
+**목적**: 커스터마이징을 통한 완전한 프로젝트별 서비스 템플릿 생성
 
-Send MMS message with images to one or multiple recipients.
+**매개변수:**
+- `project_config` (객체): 프로젝트 구성
+  ```json
+  {
+    "default_callback": "02-1234-5678",
+    "company_name": "귀하의 회사"
+  }
+  ```
+- `language` (문자열): 대상 프로그래밍 언어
+- `features` (배열, 선택사항): 포함할 기능
+  - 사용 가능: `["sms", "mms", "status_check", "history", "validation"]`
 
-**Parameters:**
-- `recipients`: List of recipients with `phone_number` and `member_code`
-- `message`: MMS message content (max 2000 characters)
-- `subject`: MMS subject line (max 40 characters)
-- `callback_number`: Sender callback number
-- `image_urls`: List of image URLs to attach (max 5 images, optional)
-- `project_id`: Project UUID (optional, uses env var if not provided)
-
-**Example:**
-```python
-await send_mms(
-    recipients=[
-        {"phone_number": "010-1234-5678", "member_code": "user123"}
-    ],
-    message="Check out this image!",
-    subject="Image MMS",
-    callback_number="02-1234-5678",
-    image_urls=["https://example.com/image.jpg"]
-)
-```
-
-### 3. get_message_status
-
-Get message sending status by group ID.
-
-**Parameters:**
-- `group_id`: Message group ID to check status
-
-**Response:**
+**반환값:**
 ```json
 {
-    "group_id": 12345,
-    "status": "성공",
-    "total_count": 1,
-    "success_count": 1,
-    "failed_count": 0,
-    "pending_count": 0,
-    "messages": [
-        {
-            "phone": "010-1234-5678",
-            "name": "홍길동",
-            "status": "성공",
-            "reason": null
-        }
-    ]
+  "success": true,
+  "code": "// 프로젝트 기본값이 포함된 커스터마이즈된 구현...",
+  "filename": "귀하의_회사_메시지_서비스.js",
+  "description": "귀하의 회사 전용 메시지 서비스 템플릿",
+  "source": "CDN 템플릿 + 프로젝트 커스터마이징"
 }
 ```
 
-### 4. get_send_history
+### 4. `get_integration_guide`
+**목적**: 상세한 플랫폼별 배포 및 통합 가이드 가져오기
 
-Get message sending history for a project.
+**매개변수:**
+- `platform` (문자열): 대상 플랫폼
+  - 지원: `vercel`, `netlify`, `heroku`, `aws`, `gcp`, `azure`, `docker`
+- `deployment_type` (문자열, 기본값: "production"): 배포 환경
+  - 옵션: `development`, `staging`, `production`
 
-**Parameters:**
-- `project_id`: Project UUID (optional, uses env var if not provided)
-- `offset`: Number of records to skip (default: 0)
-- `limit`: Maximum number of records to return (default: 20, max: 100)
-- `message_type`: Filter by message type ("SMS", "MMS", "ALL")
+**반환값:**
+```json
+{
+  "success": true,
+  "platform": "vercel",
+  "deployment_type": "production",
+  "guide_content": "# Vercel 배포 가이드\n...",
+  "security_checklist": [
+    "API 키를 코드에 하드코딩하지 않기",
+    "환경 변수 또는 시크릿 관리 서비스 사용",
+    "HTTPS 통신 확인",
+    "적절한 에러 로깅 설정"
+  ]
+}
+```
 
-## Error Handling
+## 🚨 중요한 API 변경사항
 
-The server provides comprehensive error handling with the following error codes:
+BaaS 플랫폼이 주요 변경사항으로 업데이트되었습니다:
 
-- `MISSING_PROJECT_ID`: PROJECT_ID is required
-- `INVALID_RECIPIENTS_COUNT`: Recipients count must be between 1 and 1000
-- `MESSAGE_TOO_LONG`: Message length exceeds maximum allowed
-- `SUBJECT_TOO_LONG`: Subject length exceeds 40 characters
-- `TOO_MANY_IMAGES`: Maximum 5 images allowed for MMS
-- `API_ERROR`: External API call failed
-- `INTERNAL_ERROR`: Internal server error
+### 새로운 API 구조
+- **베이스 URL**: `https://api.aiapp.link`
+- **SMS 엔드포인트**: `/api/message/sms`
+- **MMS 엔드포인트**: `/api/message/mms`
+- **인증**: `X-API-KEY` 헤더만 사용
 
-## API Integration
+### 주요 변경사항
+- ❌ 모든 API 호출에서 `PROJECT_ID` 매개변수 **제거됨**
+- ❌ 이전 엔드포인트 사용 중단
+- ✅ API 키만으로 간소화된 인증
+- ✅ 업데이트된 응답 형식
 
-This MCP server integrates with the BaaS API endpoints:
-
-- `POST /message/sms` - Send SMS messages
-- `POST /message/mms` - Send MMS messages  
-- `GET /message/send_history/sms/{group_id}/messages` - Get message status
-
-## Quick Start Templates
-
-### Authentication Service Template
-
+### 마이그레이션 가이드
 ```javascript
-// Express.js SMS verification service
-const express = require('express');
-const app = express();
-
-// Store verification codes (use Redis/Database in production)
-const verificationCodes = new Map();
-
-app.post('/send-verification', async (req, res) => {
-  const { phoneNumber, memberCode } = req.body;
-  const code = Math.floor(100000 + Math.random() * 900000);
-  
-  // Store code with expiration (5 minutes)
-  verificationCodes.set(phoneNumber, {
-    code,
-    expires: Date.now() + 5 * 60 * 1000
-  });
-  
-  // Claude will use your MCP server to send SMS
-  const result = await sendSMS({
-    recipients: [{ phone_number: phoneNumber, member_code: memberCode }],
-    message: `Your verification code: ${code}`,
-    callback_number: "02-1234-5678"
-  });
-  
-  res.json({ success: result.success });
+// 이전 (사용 중단)
+const response = await fetch('https://api.aiapp.link/message/sms', {
+  headers: {
+    'Authorization': `Bearer ${jwt_token}`,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    project_id: "uuid-string",
+    // ... 기타 매개변수
+  })
 });
 
-app.post('/verify-code', (req, res) => {
-  const { phoneNumber, code } = req.body;
-  const stored = verificationCodes.get(phoneNumber);
-  
-  if (stored && stored.code == code && Date.now() < stored.expires) {
-    verificationCodes.delete(phoneNumber);
-    res.json({ success: true, message: "Verified!" });
-  } else {
-    res.json({ success: false, message: "Invalid or expired code" });
-  }
+// 현재 (신규)
+const response = await fetch('https://api.aiapp.link/api/message/sms', {
+  headers: {
+    'X-API-KEY': process.env.BAAS_API_KEY,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    // project_id 제거됨
+    // ... 기타 매개변수
+  })
 });
 ```
 
-### E-commerce Notification Template
+## 💡 사용 예제
 
-```python
-# Django e-commerce SMS notifications
-from django.db.models.signals import post_save
-from django.dispatch import receiver
-from .models import Order
-
-@receiver(post_save, sender=Order)
-def send_order_notifications(sender, instance, created, **kwargs):
-    if created:
-        # New order - send confirmation SMS
-        send_sms(
-            recipients=[{
-                "phone_number": instance.customer.phone,
-                "member_code": f"customer_{instance.customer.id}"
-            }],
-            message=f"Order #{instance.id} confirmed! Total: ${instance.total}. We'll notify you when it ships.",
-            callback_number="02-1234-5678"
-        )
-    
-    elif instance.status == 'shipped':
-        # Order shipped - send tracking SMS with image
-        send_mms(
-            recipients=[{
-                "phone_number": instance.customer.phone,
-                "member_code": f"customer_{instance.customer.id}"
-            }],
-            message=f"Order #{instance.id} shipped! Track: {instance.tracking_number}",
-            subject="Order Shipped",
-            callback_number="02-1234-5678",
-            image_urls=[instance.get_shipping_label_url()]
-        )
+### React SMS 컴포넌트 생성
+```javascript
+// TypeScript와 함께 React 컴포넌트 생성
+const result = await mcp.generate_direct_api_code("javascript", "react", true);
+console.log(result.code); // 완전한 React 컴포넌트
 ```
 
-### React Admin Dashboard Template
+### 회사별 템플릿 생성
+```javascript
+const projectConfig = {
+  default_callback: "02-1234-5678",
+  company_name: "마이테크 코퍼레이션"
+};
 
-```jsx
-// React component for SMS campaign management
-import React, { useState } from 'react';
+const template = await mcp.create_message_service_template(
+  projectConfig, 
+  "python", 
+  ["sms", "mms", "status_check"]
+);
 
-function SMSCampaign() {
-  const [recipients, setRecipients] = useState('');
-  const [message, setMessage] = useState('');
-  const [status, setStatus] = useState(null);
-
-  const sendCampaign = async () => {
-    const recipientList = recipients.split('\n').map((line, index) => {
-      const [phone, name] = line.split(',');
-      return { phone_number: phone.trim(), member_code: name?.trim() || `user_${index}` };
-    });
-
-    // Claude will help implement this API call
-    const response = await fetch('/api/send-sms-campaign', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        recipients: recipientList,
-        message,
-        callback_number: "02-1234-5678"
-      })
-    });
-
-    const result = await response.json();
-    setStatus(result);
-  };
-
-  return (
-    <div className="sms-campaign">
-      <h2>SMS Campaign</h2>
-      <textarea
-        placeholder="Phone numbers (one per line): 010-1234-5678,John"
-        value={recipients}
-        onChange={(e) => setRecipients(e.target.value)}
-      />
-      <textarea
-        placeholder="Message content"
-        value={message}
-        onChange={(e) => setMessage(e.target.value)}
-      />
-      <button onClick={sendCampaign}>Send Campaign</button>
-      {status && (
-        <div className="status">
-          Sent: {status.sent_count}, Failed: {status.failed_count}
-        </div>
-      )}
-    </div>
-  );
-}
+// 회사 기본값이 포함된 커스터마이즈된 Python 서비스 클래스 반환
 ```
 
-## Development
+### Vercel 배포 가이드 가져오기
+```javascript
+const guide = await mcp.get_integration_guide("vercel", "production");
+console.log(guide.guide_content); // 완전한 배포 지침
+```
 
-### Installing Development Dependencies
+### 토큰 효율성을 위한 템플릿 URL 가져오기
+```javascript
+const urls = await mcp.get_code_template_url("python", "django", "heroku");
+console.log(urls.template_url);     // CDN 템플릿 URL
+console.log(urls.integration_url);  // 플랫폼별 가이드 URL
+```
 
+## 🏗 개발
+
+### 로컬에서 실행
 ```bash
-uv sync --group dev
+# MCP 서버 시작
+node index.js
+
+# 환경 변수와 함께 테스트
+BAAS_API_KEY="test" node index.js
 ```
 
-### Code Formatting
+### 프로젝트 구조
+```
+BaaS-MCP/
+├── index.js                 # Node.js 래퍼 및 의존성 관리
+├── baas_sms_mcp/
+│   ├── __init__.py         # Python 패키지 초기화
+│   └── server.py           # 메인 MCP 서버 구현
+├── templates/              # 로컬 템플릿 폴백
+├── requirements.txt        # Python 의존성
+├── package.json           # Node.js 패키지 구성
+├── pyproject.toml         # Python 패키지 구성
+└── mcp.config.json        # 예제 MCP 구성
+```
 
+### 릴리즈 프로세스
 ```bash
-uv run black baas_sms_mcp/
+# 패치 버전 (버그 수정)
+npm run release:patch
+
+# 마이너 버전 (새 기능)
+npm run release:minor
+
+# 메이저 버전 (주요 변경)
+npm run release:major
 ```
 
-### Type Checking
+## 🔒 보안 모범 사례
 
-```bash
-uv run mypy baas_sms_mcp/
-```
+### API 키 관리
+- 소스 코드에 API 키를 하드코딩하지 말 것
+- 환경 변수 또는 시크릿 관리 서비스 사용
+- API 키를 정기적으로 교체
+- API 키 사용량 모니터링
 
-### Testing
+### 배포 보안
+- 모든 통신에 HTTPS 활성화
+- 입력 데이터를 철저히 검증
+- 적절한 에러 처리 및 로깅 구현
+- 최소 권한 접근 원칙 사용
 
-```bash
-uv run pytest
-```
+### 코드 생성 보안
+- 신뢰할 수 있는 CDN 소스에서 템플릿 가져오기
+- 자동 입력 정화
+- MCP 서버에서 생성된 코드 실행하지 않음
+- 템플릿과 런타임 환경 간의 명확한 분리
 
-### Building Package
+## 🤝 기여하기
 
-```bash
-uv build
-```
+1. 저장소 포크
+2. 기능 브랜치 생성: `git checkout -b feature/new-feature`
+3. 변경사항을 만들고 철저히 테스트
+4. 명확한 메시지로 커밋: `git commit -m "새 기능 추가"`
+5. 포크에 푸시: `git push origin feature/new-feature`
+6. Pull Request 생성
 
-### Publishing to PyPI
+## 📊 성능 및 모니터링
 
-```bash
-uv publish
-```
+### 토큰 효율성
+- CDN 기반 템플릿으로 토큰 사용량 60-80% 감소
+- 지능형 캐싱으로 중복 API 호출 최소화
+- MCP 프로토콜용 최적화된 응답 형식
 
-## License
+### 모니터링
+- 내장 에러 로깅 및 보고
+- CDN 성능 모니터링
+- API 키 사용량 추적
+- 템플릿 가져오기 성공률
 
-MIT License - see [LICENSE](LICENSE) file for details.
+## 📄 라이선스
 
-## Language
+MIT 라이선스 - 자세한 내용은 [LICENSE](LICENSE) 파일을 참조하세요.
 
-- [English](README.md)
-- [한국어](README.ko.md)
+## 🆘 지원 및 커뮤니티
 
-## Support
+- **GitHub 이슈**: [버그 신고 또는 기능 요청](https://github.com/jjunmomo/BaaS-MCP/issues)
+- **이메일 지원**: support@aiapp.link
+- **문서**: [API 명세서](SMS_MMS_API_Specification.md)
+- **영어 문서**: [README.md](README.eng.md)
 
-For support and questions, please contact: support@aiapp.link
+## 🗺 로드맵
+
+### 예정된 기능
+- [ ] 추가 언어 지원 (Java, Go, C#)
+- [ ] 고급 템플릿 커스터마이징 옵션
+- [ ] 실시간 템플릿 업데이트
+- [ ] 템플릿 버전 관리
+- [ ] 향상된 에러 보고 및 디버깅
+- [ ] 인기 IDE 확장 프로그램과의 통합
+
+### 버전 히스토리
+- **v1.0.18**: API 업데이트가 포함된 현재 안정 릴리즈
+- **v1.0.0**: 초기 안정 릴리즈
+- **v0.1.4**: 핵심 기능이 포함된 베타 릴리즈
+
+---
+
+For support and questions, please contact: mbaas.tech@gmail.com
+
+=======
+> **참고**: 이 MCP 서버는 외부 개발자 워크플로우에 최적화되어 있으며 AI 기반 개발 환경과 원활하게 통합됩니다. 최신 업데이트와 포괄적인 API 문서는 [GitHub 저장소](https://github.com/jjunmomo/BaaS-MCP)를 참조하세요.
