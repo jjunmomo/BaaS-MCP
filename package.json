@@ -47,8 +47,8 @@
     "requirements.txt",
     "baas_sms_mcp/",
     "llms.txt",
+    "README.eng.md",
     "README.md",
-    "README.ko.md",
     "LICENSE"
   ],
   "preferGlobal": true
