@@ -7,7 +7,14 @@
 
 지능형 코드 생성과 CDN 최적화 템플릿을 통해 BaaS 플랫폼과의 원활한 통합을 제공하는 SMS 및 MMS 메시징 서비스용 종합 모델 컨텍스트 프로토콜 서버입니다.
 
+<a href="https://glama.ai/mcp/servers/@jjunmomo/BaaS-MCP">
+  <img width="380" height="200" src="https://glama.ai/mcp/servers/@jjunmomo/BaaS-MCP/badge" alt="BaaS SMS/Server MCP server" />
+</a>
+
+## Features
+=======
 ## 🚀 개요
+
 
 이 MCP 서버는 AI 개발 워크플로우와 BaaS 메시징 플랫폼 사이의 브리지 역할을 하며 다음을 제공합니다:
 
