@@ -416,4 +416,7 @@ MIT 라이선스 - 자세한 내용은 [LICENSE](LICENSE) 파일을 참조하세
 
 ---
 
+For support and questions, please contact: mbaas.tech@gmail.com
+
+=======
 > **참고**: 이 MCP 서버는 외부 개발자 워크플로우에 최적화되어 있으며 AI 기반 개발 환경과 원활하게 통합됩니다. 최신 업데이트와 포괄적인 API 문서는 [GitHub 저장소](https://github.com/jjunmomo/BaaS-MCP)를 참조하세요.
